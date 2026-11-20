@@ -1,0 +1,389 @@
+<!DOCTYPE html><html class="h-full" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_stack" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100%;min-height:100%;margin:0;padding:0;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { colors: { 'primary-container': '#4968d6', 'secondary-fixed-dim': '#c2c6d4', 'on-error-container': '#93000a', 'canvas': '#F6F7F9', 'on-tertiary-fixed': '#161b27', 'inverse-on-surface': '#f0f1f3', 'on-primary-fixed-variant': '#143caa', 'background': '#f8f9fb', 'inverse-surface': '#2e3132', 'surface-container-lowest': '#ffffff', 'on-secondary-fixed': '#171c25', 'tertiary': '#535865', 'surface-container-low': '#f2f4f6', 'surface-tint': '#3555c3', 'primary': '#2d4ebc', 'accent': '#4968D6', 'primary-fixed-dim': '#b7c4ff', 'on-secondary': '#ffffff', 'on-secondary-fixed-variant': '#424752', 'error-container': '#ffdad6', 'surface': '#FFFFFF', 'tertiary-fixed-dim': '#c2c6d6', 'surface-container-high': '#e7e8ea', 'on-tertiary-container': '#f4f5ff', 'on-error': '#ffffff', 'on-surface': '#191c1e', 'surface-container': '#edeef0', 'surface-container-highest': '#e1e2e4', 'error': '#ba1a1a', 'focus': '#7895F2', 'primary-fixed': '#dce1ff', 'inverse-primary': '#b7c4ff', 'on-background': '#191c1e', 'surface-subtle': '#F0F2F5', 'success': '#16845B', 'info': '#3574B8', 'secondary': '#595e6a', 'tertiary-container': '#6b707e', 'on-primary-container': '#f5f4ff', 'tertiary-fixed': '#dee2f3', 'border': '#E4E7EC', 'warning': '#B7791F', 'surface-bright': '#f8f9fb', 'on-primary-fixed': '#001551', 'accent-hover': '#3D59BE', 'accent-soft': '#EDF1FF', 'text-secondary': '#667085', 'outline': '#747684', 'on-tertiary': '#ffffff', 'on-surface-variant': '#444653', 'on-tertiary-fixed-variant': '#424754', 'outline-variant': '#c4c5d5', 'surface-variant': '#e1e2e4', 'on-primary': '#ffffff', 'on-secondary-container': '#5f6470', 'secondary-container': '#dee2f0', 'text-muted': '#98A2B3', 'text-primary': '#202531', 'secondary-fixed': '#dee2f0', 'surface-dim': '#d9dadc', 'danger': '#C2414B' }, borderRadius: { 'DEFAULT': '0.25rem', 'lg': '0.5rem', 'xl': '0.75rem', 'full': '9999px' }, spacing: { 'space-xs': '0.25rem', 'space-lg': '1rem', 'margin': '1.75rem', 'space-md': '0.75rem', 'gutter': '1rem', 'space-xl': '1.5rem', 'space-sm': '0.5rem' }, fontFamily: { 'headline-lg': ['Inter'], 'label-md': ['Inter'], 'timer-display': ['Inter'], 'body-sm': ['Inter'], 'timer-inline': ['Inter'], 'headline-xl-mobile': ['Inter'], 'timer-display-mobile': ['Inter'], 'body-lg': ['Inter'], 'body-md': ['Inter'], 'headline-xl': ['Inter'], 'headline-md': ['Inter'] }, fontSize: { 'headline-lg': ['20px', { lineHeight: '28px', letterSpacing: '-0.01em', fontWeight: '600' }], 'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.01em', fontWeight: '500' }], 'timer-display': ['28px', { lineHeight: '34px', fontWeight: '600' }], 'body-sm': ['13px', { lineHeight: '18px', fontWeight: '400' }], 'timer-inline': ['14px', { lineHeight: '20px', fontWeight: '600' }], 'headline-xl-mobile': ['24px', { lineHeight: '32px', letterSpacing: '-0.015em', fontWeight: '600' }], 'timer-display-mobile': ['22px', { lineHeight: '28px', fontWeight: '600' }], 'body-lg': ['15px', { lineHeight: '22px', fontWeight: '400' }], 'body-md': ['14px', { lineHeight: '20px', fontWeight: '400' }], 'headline-xl': ['30px', { lineHeight: '38px', letterSpacing: '-0.02em', fontWeight: '600' }], 'headline-md': ['16px', { lineHeight: '24px', letterSpacing: '-0.005em', fontWeight: '600' }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-canvas text-on-surface font-body-md min-h-screen flex flex-col selection:bg-accent-soft selection:text-accent"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)] pt-safe"><div class="h-16 px-gutter flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-xs"><button aria-label="Go back" class="w-11 h-11 rounded-lg flex items-center justify-center text-text-primary hover:bg-surface-subtle transition-colors -ml-2 shrink-0" onclick="history.back()"><span class="material-symbols-outlined text-[22px]">arrow_back</span></button><h1 class="font-headline-md text-headline-md text-text-primary tracking-tight truncate">Create Task</h1></div><div class="flex items-center gap-space-xs"><button aria-label="More options" class="w-11 h-11 rounded-lg flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface-subtle transition-colors shrink-0"><span class="material-symbols-outlined text-[20px]">more_vert</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 w-full max-w-md mx-auto pt-16 pb-safe px-gutter flex flex-col bg-canvas"><div class="flex flex-col w-full pb-8">
+<!-- Modal Sheet Header Area (Integrated within Mobile Main Slot) -->
+<div class="flex items-center justify-between py-3 mb-2">
+<div class="flex items-center gap-2">
+<button aria-label="Close task form" class="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-surface-container-high transition-colors" onclick="history.back()" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+<div><span class="font-headline-md text-headline-md text-on-surface">Create Task</span><p class="font-label-md text-label-md text-secondary">Add a task to your workspace</p></div>
+</div>
+<button class="h-9 px-4 rounded-lg bg-primary hover:bg-accent-hover text-on-primary font-headline-md text-headline-md shadow-sm transition-all flex items-center gap-1.5 active:scale-95" id="topSaveBtn" type="button">
+<span>Save</span>
+<span class="material-symbols-outlined text-[18px]">check</span>
+</button>
+</div>
+<!-- Form Container -->
+<form class="flex flex-col gap-4" id="taskForm" onsubmit="event.preventDefault();">
+<!-- Section 1: Core Task Essentials -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex flex-col gap-3">
+<!-- Task Title -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="font-headline-md text-headline-md text-on-surface flex items-center gap-1" for="taskTitle">
+            Task Title <span class="text-error">*</span>
+</label>
+<span class="font-label-md text-label-md text-secondary bg-surface-container-low px-2 py-0.5 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-primary">keyboard_return</span> Enter to save
+          </span>
+</div>
+<div class="relative">
+<input autocomplete="off" class="w-full h-11 px-3.5 bg-surface-container-lowest text-on-surface font-body-lg text-body-lg rounded-lg outline-none focus:bg-surface transition-all placeholder:text-text-muted" id="taskTitle" name="title" placeholder="What needs to be done?" required="" type="text" value="Finalize Raasta Mobile Checkout Handoff">
+</div>
+</div>
+<!-- Description / Criteria -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-secondary flex items-center justify-between" for="taskDescription">
+<span>Description</span>
+<span class="text-text-muted font-label-md text-label-md">Optional</span>
+</label>
+<textarea class="w-full p-3 bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg resize-none outline-none focus:bg-surface transition-all placeholder:text-text-muted leading-relaxed" id="taskDescription" placeholder="Add an optional description..." rows="3">Review final token mapping with iOS engineering team. Validate haptic triggers and empty states for currency converters.</textarea>
+</div>
+<!-- Project & Client selector -->
+<div class="grid grid-cols-1 gap-2 pt-1">
+<label class="font-label-md text-label-md text-secondary">Project / Client</label>
+<div class="relative">
+<button class="w-full h-11 px-3.5 rounded-lg bg-surface-container-low text-on-surface flex items-center justify-between active:scale-[0.99] transition-all" id="projectDropdownTrigger" type="button">
+<div class="flex items-center gap-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-primary-fixed"></span>
+<span class="font-headline-md text-headline-md text-on-surface" id="selectedProjectName">Raasta</span>
+<span class="font-label-md text-label-md text-secondary bg-surface-container px-2 py-0.5 rounded">Client Workspace</span>
+</div>
+<span class="material-symbols-outlined text-secondary text-[20px]">unfold_more</span>
+</button>
+<!-- Dropdown Options Menu -->
+<div class="hidden absolute top-12 left-0 right-0 z-30 bg-surface rounded-xl shadow-xl p-1.5 flex flex-col gap-1" id="projectMenu">
+<button class="project-option w-full p-2.5 rounded-lg hover:bg-surface-subtle flex items-center justify-between transition-colors text-left" data-color="bg-primary" data-project="Raasta" type="button">
+<div class="flex items-center gap-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<span class="font-headline-md text-headline-md text-on-surface">Raasta</span>
+</div>
+<span class="material-symbols-outlined text-primary text-[18px]">check</span>
+</button>
+<button class="project-option w-full p-2.5 rounded-lg hover:bg-surface-subtle flex items-center justify-between transition-colors text-left" data-color="bg-accent" data-project="Foundry" type="button">
+<div class="flex items-center gap-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-accent"></span>
+<span class="font-headline-md text-headline-md text-on-surface">Foundry</span>
+</div>
+</button>
+<button class="project-option w-full p-2.5 rounded-lg hover:bg-surface-subtle flex items-center justify-between transition-colors text-left" data-color="bg-warning" data-project="Sangi Food" type="button">
+<div class="flex items-center gap-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-warning"></span>
+<span class="font-headline-md text-headline-md text-on-surface">Sangi Food</span>
+</div>
+</button>
+<button class="project-option w-full p-2.5 rounded-lg hover:bg-surface-subtle flex items-center justify-between transition-colors text-left" data-color="bg-success" data-project="Personal" type="button">
+<div class="flex items-center gap-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-success"></span>
+<span class="font-headline-md text-headline-md text-on-surface">Personal</span>
+</div>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 2: Priority Selection -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<label class="font-headline-md text-headline-md text-on-surface">Task Priority</label>
+<span class="font-label-md text-label-md text-danger bg-error-container/40 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-danger"></span> High Priority
+        </span>
+</div>
+<div class="grid grid-cols-3 gap-2 bg-surface-container-low p-1 rounded-lg" id="prioritySegmented">
+<button class="priority-btn py-2 px-3 rounded-md flex items-center justify-center gap-1.5 bg-error-container/60 text-danger shadow-sm transition-all" data-priority="High" type="button">
+<span class="material-symbols-outlined text-[16px]">priority_high</span>
+<span class="font-headline-md text-headline-md">High</span>
+</button>
+<button class="priority-btn py-2 px-3 rounded-md flex items-center justify-center gap-1.5 text-secondary hover:text-on-surface transition-all" data-priority="Medium" type="button">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+<span class="font-headline-md text-headline-md">Medium</span>
+</button>
+<button class="priority-btn py-2 px-3 rounded-md flex items-center justify-center gap-1.5 text-secondary hover:text-on-surface transition-all" data-priority="Low" type="button">
+<span class="material-symbols-outlined text-[16px]">keyboard_arrow_down</span>
+<span class="font-headline-md text-headline-md">Low</span>
+</button>
+</div>
+</div>
+<!-- Section 3: Scheduling & Timebox -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex flex-col gap-3.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">calendar_today</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Date &amp; Time Scheduling</h2>
+</div>
+<span class="font-label-md text-label-md text-secondary">Local (GMT+1)</span>
+</div>
+<!-- Scheduled Date -->
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-secondary">Scheduled Date</span>
+<button class="w-full h-11 px-3.5 bg-surface-container-low hover:bg-surface-container rounded-lg flex items-center justify-between text-left transition-colors" type="button">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">event</span>
+<span class="font-body-md text-body-md text-on-surface font-medium" id="previewDateLabel">Today (Thu, Oct 24, 2024)</span>
+</div>
+<span class="font-label-md text-label-md text-accent font-medium">Change</span>
+</button>
+</div>
+<!-- Time & Duration 2-Col Grid -->
+<div class="grid grid-cols-2 gap-3">
+<!-- Start Time -->
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-secondary">Start Time</span>
+<div class="relative">
+<input class="w-full h-11 px-3 bg-surface-container-low text-on-surface font-headline-md text-headline-md rounded-lg outline-none text-center" id="startTimeInput" type="text" value="14:00">
+<span class="absolute left-2.5 top-3 material-symbols-outlined text-text-muted text-[16px]">schedule</span>
+</div>
+</div>
+<!-- Planned Duration -->
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-secondary">Planned Duration</span>
+<div class="relative">
+<select class="w-full h-11 px-3.5 bg-surface-container-low text-on-surface font-headline-md text-headline-md rounded-lg outline-none appearance-none pr-8" id="durationSelect">
+<option value="30m">30m</option>
+<option value="45m">45m</option>
+<option value="1h">1h</option>
+<option selected="" value="1h 30m">1h 30m</option>
+<option value="2h">2h</option>
+<option value="3h">3h</option>
+</select>
+<span class="material-symbols-outlined text-secondary text-[18px] absolute right-2.5 top-3 pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary -mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-text-muted">insights</span>
+        Used for planned vs. actual deep-work reports
+      </p>
+<!-- Reminder Selector -->
+<div class="flex flex-col gap-1 pt-1">
+<span class="font-label-md text-label-md text-secondary">Reminder Notification</span>
+<div class="relative">
+<button class="w-full h-10 px-3.5 bg-surface-container-low rounded-lg flex items-center justify-between text-left text-on-surface" type="button">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">notifications_active</span>
+<span class="font-body-md text-body-md">15 minutes before</span>
+</div>
+<span class="material-symbols-outlined text-secondary text-[18px]">expand_more</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Section 4: Google Calendar Sync Card -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex flex-col gap-3.5">
+<!-- Sync Header -->
+<div class="flex items-start justify-between">
+<div class="flex items-start gap-3">
+<!-- Calendar Custom Symbol Emblem -->
+<div class="w-10 h-10 rounded-xl bg-accent-soft text-accent flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">event_available</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<h3 class="font-headline-md text-headline-md text-on-surface">Google Calendar Sync</h3>
+</div>
+<span class="font-label-md text-label-md text-success flex items-center gap-1 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+              Connected (alex.rivera@designstudio.io)
+            </span>
+</div>
+</div>
+<!-- Sync Toggle Button -->
+<button aria-checked="true" class="w-12 h-6 rounded-full bg-primary transition-colors relative flex items-center px-0.5 cursor-pointer" id="calendarToggle" role="switch" type="button">
+<span class="w-5 h-5 rounded-full bg-surface shadow-sm transform translate-x-6 transition-transform" id="calendarToggleHandle"></span>
+</button>
+</div>
+<!-- Sync Settings Block -->
+<div class="flex flex-col gap-3 pt-1" id="syncDetailsPanel">
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-secondary">Target Calendar</label>
+<div class="relative">
+<select class="w-full h-10 px-3 bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg outline-none appearance-none pr-8">
+<option selected="">Work Calendar (Primary)</option>
+<option>Raasta Design Sprints</option>
+<option>Foundry Milestones</option>
+</select>
+<span class="material-symbols-outlined text-secondary text-[18px] absolute right-2.5 top-2.5 pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Live Event Preview Card -->
+<div class="bg-accent-soft rounded-lg p-3.5 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-accent font-headline-md text-headline-md">
+<span class="material-symbols-outlined text-[17px]">event_upcoming</span>
+<span>Live Calendar Preview</span>
+</div>
+<span class="font-label-md text-label-md text-primary bg-primary-fixed/40 px-2 py-0.5 rounded">One-Way Sync</span>
+</div>
+<div class="flex flex-col gap-1">
+<p class="font-headline-md text-headline-md text-on-primary-fixed-variant truncate" id="previewEventTitle">
+              Finalize Raasta Mobile Checkout Handoff
+            </p>
+<div class="flex items-center gap-2 text-text-secondary font-body-sm text-body-sm flex-wrap"><span class="flex items-center gap-1 font-medium text-primary"><span class="material-symbols-outlined text-[14px]">nest_clock_farsight_analog</span><span id="previewEventTime">Today, 2:00 PM – 3:30 PM</span></span><span>•</span><span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">sync_alt</span>One-way synchronization: My Work Planner → Google Calendar</span></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 5: Contextual Delight Banner -->
+
+<!-- Sticky Bottom Action Bar Area -->
+<div class="sticky bottom-0 bg-canvas/95 backdrop-blur-md pt-3 pb-2 -mx-gutter px-gutter flex flex-col gap-2 z-20">
+<div class="grid grid-cols-2 gap-2.5 w-full">
+<!-- Save to Inbox (Secondary outline) -->
+<button class="h-12 px-3 rounded-lg bg-surface text-on-surface hover:bg-surface-container font-headline-md text-headline-md shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95" id="btnSaveInbox" type="button">
+<span class="material-symbols-outlined text-secondary text-[18px]">inventory_2</span>
+<span>Save to Inbox</span>
+</button>
+<!-- Save & Add to Today (Primary Blue) -->
+<button class="h-12 px-3 rounded-lg bg-primary hover:bg-accent-hover text-on-primary font-headline-md text-headline-md shadow-md transition-all flex items-center justify-center gap-2 active:scale-95" id="btnSaveToday" type="button"><span class="material-symbols-outlined text-[18px]">check</span><span>Create Task</span></button>
+</div>
+<!-- Quick Feedback Toast slot -->
+<div class="hidden w-full bg-inverse-surface text-inverse-on-surface p-2.5 rounded-lg flex items-center justify-between shadow-lg" id="toastNotification">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-success text-[18px]">check_circle</span>
+<span class="font-body-sm text-body-sm" id="toastMessage">Task successfully scheduled with Google Calendar</span>
+</div>
+<button class="text-inverse-on-surface/70 hover:text-inverse-on-surface" onclick="document.getElementById('toastNotification').classList.add('hidden')" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+</form>
+</div>
+<script>
+  (function initCreateTask() {
+    // Project selection dropdown logic
+    const projectTrigger = document.getElementById('projectDropdownTrigger');
+    const projectMenu = document.getElementById('projectMenu');
+    const selectedProjectName = document.getElementById('selectedProjectName');
+    const projectOptions = document.querySelectorAll('.project-option');
+
+    if (projectTrigger && projectMenu) {
+      projectTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        projectMenu.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', () => {
+        projectMenu.classList.add('hidden');
+      });
+
+      projectOptions.forEach(opt => {
+        opt.addEventListener('click', () => {
+          const val = opt.getAttribute('data-project');
+          selectedProjectName.textContent = val;
+          projectMenu.classList.add('hidden');
+        });
+      });
+    }
+
+    // Priority segmented selector logic
+    const priorityButtons = document.querySelectorAll('.priority-btn');
+    priorityButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        priorityButtons.forEach(b => {
+          b.className = 'priority-btn py-2 px-3 rounded-md flex items-center justify-center gap-1.5 text-secondary hover:text-on-surface transition-all';
+        });
+
+        const prio = btn.getAttribute('data-priority');
+        if (prio === 'High') {
+          btn.className = 'priority-btn py-2 px-3 rounded-md flex items-center justify-center gap-1.5 bg-error-container/60 text-danger shadow-sm transition-all';
+        } else if (prio === 'Medium') {
+          btn.className = 'priority-btn py-2 px-3 rounded-md flex items-center justify-center gap-1.5 bg-surface-container-high text-warning shadow-sm transition-all';
+        } else {
+          btn.className = 'priority-btn py-2 px-3 rounded-md flex items-center justify-center gap-1.5 bg-surface-container-high text-info shadow-sm transition-all';
+        }
+      });
+    });
+
+    // Calendar sync switch
+    const calendarToggle = document.getElementById('calendarToggle');
+    const calendarHandle = document.getElementById('calendarToggleHandle');
+    const syncPanel = document.getElementById('syncDetailsPanel');
+    let isCalendarActive = true;
+
+    if (calendarToggle && calendarHandle && syncPanel) {
+      calendarToggle.addEventListener('click', () => {
+        isCalendarActive = !isCalendarActive;
+        calendarToggle.setAttribute('aria-checked', isCalendarActive ? 'true' : 'false');
+        if (isCalendarActive) {
+          calendarToggle.classList.remove('bg-surface-container-highest');
+          calendarToggle.classList.add('bg-primary');
+          calendarHandle.classList.remove('translate-x-0');
+          calendarHandle.classList.add('translate-x-6');
+          syncPanel.style.opacity = '1';
+          syncPanel.style.pointerEvents = 'auto';
+        } else {
+          calendarToggle.classList.remove('bg-primary');
+          calendarToggle.classList.add('bg-surface-container-highest');
+          calendarHandle.classList.remove('translate-x-6');
+          calendarHandle.classList.add('translate-x-0');
+          syncPanel.style.opacity = '0.35';
+          syncPanel.style.pointerEvents = 'none';
+        }
+      });
+    }
+
+    // Dynamic Live Preview updates
+    const titleInput = document.getElementById('taskTitle');
+    const previewTitle = document.getElementById('previewEventTitle');
+    const durationSelect = document.getElementById('durationSelect');
+    const startTimeInput = document.getElementById('startTimeInput');
+    const previewEventTime = document.getElementById('previewEventTime');
+
+    function updatePreview() {
+      if (titleInput && previewTitle) {
+        previewTitle.textContent = titleInput.value.trim() || 'Untitled Deep Work Session';
+      }
+      if (startTimeInput && previewEventTime && durationSelect) {
+        previewEventTime.textContent = `Today, 2:00 PM – ${durationSelect.value === '1h 30m' ? '3:30 PM' : '3:00 PM'}`;
+      }
+    }
+
+    if (titleInput) {
+      titleInput.addEventListener('input', updatePreview);
+    }
+    if (durationSelect) {
+      durationSelect.addEventListener('change', updatePreview);
+    }
+
+    // Toast notification helper
+    const toast = document.getElementById('toastNotification');
+    const toastMsg = document.getElementById('toastMessage');
+    function triggerSaveToast(message) {
+      if (!toast) return;
+      toastMsg.textContent = message;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
+    }
+
+    const btnSaveToday = document.getElementById('btnSaveToday');
+    const btnSaveInbox = document.getElementById('btnSaveInbox');
+    const topSaveBtn = document.getElementById('topSaveBtn');
+
+    if (btnSaveToday) {
+      btnSaveToday.addEventListener('click', () => {
+        triggerSaveToast('Scheduled for Today & synced to Google Calendar');
+      });
+    }
+    if (btnSaveInbox) {
+      btnSaveInbox.addEventListener('click', () => {
+        triggerSaveToast('Saved to Inbox backlog');
+      });
+    }
+    if (topSaveBtn) {
+      topSaveBtn.addEventListener('click', () => {
+        triggerSaveToast('Task saved successfully');
+      });
+    }
+  })();
+</script></main>
+
+</body></html>

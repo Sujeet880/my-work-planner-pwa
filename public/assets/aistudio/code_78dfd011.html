@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "surface-container-high": "#e7e8ea",
+          "warning": "#B7791F",
+          "surface-dim": "#d9dadc",
+          "primary-fixed": "#dce1ff",
+          "accent-soft": "#EDF1FF",
+          "info": "#3574B8",
+          "on-secondary": "#ffffff",
+          "on-surface-variant": "#444653",
+          "on-tertiary": "#ffffff",
+          "tertiary-container": "#6b707e",
+          "secondary-container": "#dee2f0",
+          "surface-variant": "#e1e2e4",
+          "on-secondary-fixed": "#171c25",
+          "inverse-primary": "#b7c4ff",
+          "inverse-on-surface": "#f0f1f3",
+          "outline": "#747684",
+          "surface-subtle": "#F0F2F5",
+          "on-primary-fixed": "#001551",
+          "on-error": "#ffffff",
+          "text-secondary": "#667085",
+          "focus": "#7895F2",
+          "surface-container-low": "#f2f4f6",
+          "accent": "#4968D6",
+          "canvas": "#F6F7F9",
+          "on-background": "#191c1e",
+          "error": "#ba1a1a",
+          "surface-container": "#edeef0",
+          "on-tertiary-container": "#f4f5ff",
+          "on-surface": "#191c1e",
+          "text-muted": "#98A2B3",
+          "on-secondary-container": "#5f6470",
+          "on-tertiary-fixed-variant": "#424754",
+          "on-tertiary-fixed": "#161b27",
+          "tertiary": "#535865",
+          "accent-hover": "#3D59BE",
+          "on-primary-container": "#f5f4ff",
+          "background": "#f8f9fb",
+          "secondary-fixed": "#dee2f0",
+          "tertiary-fixed-dim": "#c2c6d6",
+          "text-primary": "#202531",
+          "secondary": "#595e6a",
+          "surface-bright": "#f8f9fb",
+          "success": "#16845B",
+          "surface": "#FFFFFF",
+          "on-primary": "#ffffff",
+          "surface-container-highest": "#e1e2e4",
+          "border": "#E4E7EC",
+          "primary-container": "#4968d6",
+          "primary": "#2d4ebc",
+          "secondary-fixed-dim": "#c2c6d4",
+          "on-error-container": "#93000a",
+          "primary-fixed-dim": "#b7c4ff",
+          "surface-container-lowest": "#ffffff",
+          "on-secondary-fixed-variant": "#424752",
+          "error-container": "#ffdad6",
+          "danger": "#C2414B",
+          "surface-tint": "#3555c3",
+          "inverse-surface": "#2e3132",
+          "outline-variant": "#c4c5d5",
+          "tertiary-fixed": "#dee2f3",
+          "on-primary-fixed-variant": "#143caa"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1rem",
+          "space-md": "0.75rem",
+          "space-xs": "0.25rem",
+          "margin": "1.75rem",
+          "space-sm": "0.5rem",
+          "space-lg": "1rem",
+          "space-xl": "1.5rem"
+        },
+        "fontFamily": {
+          "timer-display": [
+            "Inter"
+          ],
+          "body-md": [
+            "Inter"
+          ],
+          "timer-inline": [
+            "Inter"
+          ],
+          "label-md": [
+            "Inter"
+          ],
+          "headline-xl-mobile": [
+            "Inter"
+          ],
+          "headline-lg": [
+            "Inter"
+          ],
+          "headline-xl": [
+            "Inter"
+          ],
+          "body-sm": [
+            "Inter"
+          ],
+          "timer-display-mobile": [
+            "Inter"
+          ],
+          "headline-md": [
+            "Inter"
+          ],
+          "body-lg": [
+            "Inter"
+          ]
+        },
+        "fontSize": {
+          "timer-display": [
+            "28px",
+            {
+              "lineHeight": "34px",
+              "fontWeight": "600"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "400"
+            }
+          ],
+          "timer-inline": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "600"
+            }
+          ],
+          "label-md": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "500"
+            }
+          ],
+          "headline-xl-mobile": [
+            "24px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-lg": [
+            "20px",
+            {
+              "lineHeight": "28px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-xl": [
+            "30px",
+            {
+              "lineHeight": "38px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-sm": [
+            "13px",
+            {
+              "lineHeight": "18px",
+              "fontWeight": "400"
+            }
+          ],
+          "timer-display-mobile": [
+            "22px",
+            {
+              "lineHeight": "28px",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "-0.005em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-lg": [
+            "15px",
+            {
+              "lineHeight": "22px",
+              "fontWeight": "400"
+            }
+          ]
+        }
+      },
+    },
+  };</script></head><body class="bg-canvas text-on-surface font-body-md text-body-md antialiased min-h-screen"><aside class="fixed left-0 top-0 bottom-0 w-[232px] bg-surface border-r border-border z-40 flex flex-col justify-between select-none"><div class="flex flex-col flex-1 overflow-y-auto"><div class="h-16 px-space-lg flex items-center justify-between border-b border-border"><div class="flex items-center gap-space-sm"><img alt="My Work Planner Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrA4VBW5vfN7QKqENNTK5pGBkZ2WA_fBqByzZ8qvYXqoQKNOS5gtbHEGFT1THPoKN8EZMmRcAZt6iLg1Wc_JcJgLZHDysPenRnsSDCkP1DHniq2Tooel8VIGQ4GAwAd76l3Qte2a7Jyxcp5YcfumzEdca9nas9MDxv1OCBoNTWQ0fFJ8s0yaHAa0_8sJ7anXDnANalKu1B98qAREBa2DpewqsLw89arR55AlTmNLsCvs"/><span class="font-headline-md text-headline-md text-text-primary tracking-tight">Planner</span></div><span class="px-1.5 py-0.5 rounded bg-surface-subtle text-text-secondary font-label-md text-label-md">PWA</span></div><div class="px-space-md py-space-lg"><div class="px-space-sm mb-space-xs font-label-md text-label-md text-text-muted uppercase tracking-wider">Workspace</div><nav class="flex flex-col gap-1" data-active-classes="bg-accent-soft text-accent font-medium rounded-lg"><a class="flex items-center justify-between px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors group" data-path="dashboard" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">grid_view</span><span class="font-body-md text-body-md">Dashboard</span></div></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors group" data-path="my-tasks" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">check_circle</span><span class="font-body-md text-body-md">My Tasks</span></div><span class="px-1.5 py-0.5 rounded-full bg-accent/10 text-accent font-label-md text-label-md group-hover:bg-accent/20">8</span></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors group" data-path="time-tracker" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">timer</span><span class="font-body-md text-body-md">Time Tracker</span></div><span class="w-2 h-2 rounded-full bg-success animate-pulse"></span></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors group" data-path="reports" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">bar_chart</span><span class="font-body-md text-body-md">Reports</span></div></a></nav></div><div class="px-space-md py-space-sm"><div class="px-space-sm mb-space-xs font-label-md text-label-md text-text-muted uppercase tracking-wider">Projects</div><nav class="flex flex-col gap-1" data-active-classes="bg-accent-soft text-accent font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="project-raasta" href="#"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="font-body-md text-body-md">Raasta</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="project-foundry" href="#"><span class="w-2 h-2 rounded-full bg-warning"></span><span class="font-body-md text-body-md">Foundry</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="project-personal" href="#"><span class="w-2 h-2 rounded-full bg-info"></span><span class="font-body-md text-body-md">Personal</span></a></nav></div><div class="px-space-md py-space-sm"><div class="px-space-sm mb-space-xs font-label-md text-label-md text-text-muted uppercase tracking-wider">System</div><nav class="flex flex-col gap-1" data-active-classes="bg-accent-soft text-accent font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-md text-body-md">Settings</span></a></nav></div></div><div class="p-space-md border-t border-border"><button class="w-full flex items-center justify-between p-1.5 rounded-lg hover:bg-surface-subtle transition-colors text-left group"><div class="flex items-center gap-space-sm min-w-0"><img alt="Alex Rivera" class="w-8 h-8 rounded-full object-cover shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyrl2cBPqQUhx1EfoLc0OCeecV7sLIVNJRebhpbIDupD3arWT1btikDszcVNRo5PhlXj53Bmd0JoDehpGzvh50q-kr7wvkTPpzTAx6v8t-29ljAiqbnmvPhEaGbaXpWUgNOHgUZzpVRNnFmloFOmyCKZT0yzVAFQmcRGgXCF43mtWn_jzJSs7WI1uT2SLu-y3Ibsl2npzENSf-CSYm2YqbOoKqGyiTezdcnL2nLEk"/><div class="min-w-0"><div class="font-body-md text-body-md font-medium text-text-primary truncate">Alex Rivera</div><div class="font-label-md text-label-md text-text-muted truncate">Product Designer</div></div></div><span class="material-symbols-outlined text-[18px] text-text-muted group-hover:text-text-primary shrink-0">unfold_more</span></button></div></aside><div class="pl-[232px]"><header class="fixed top-0 left-[232px] right-0 h-16 bg-surface border-b border-border z-30 flex items-center justify-between px-space-xl"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-xs text-text-secondary font-body-sm text-body-sm"><span class="material-symbols-outlined text-[16px]">calendar_today</span><span>Thursday, Oct 24, 2024</span></div></div><div class="flex items-center gap-space-md"><button class="flex items-center gap-space-sm h-9 px-space-md rounded-lg border border-border bg-surface-subtle hover:bg-surface text-text-secondary hover:text-text-primary transition-colors"><span class="material-symbols-outlined text-[16px]">search</span><span class="font-body-sm text-body-sm text-text-muted">Search tasks, logs...</span><kbd class="ml-space-md px-1.5 py-0.5 rounded border border-border bg-surface font-label-md text-label-md text-text-muted">⌘K</kbd></button><button aria-label="Notifications" class="relative w-9 h-9 flex items-center justify-center rounded-lg border border-border bg-surface hover:bg-surface-subtle text-text-secondary transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent ring-2 ring-surface"></span></button><button class="flex items-center gap-space-xs h-9 px-space-md rounded-lg bg-accent text-on-primary hover:bg-accent-hover font-body-sm text-body-sm font-medium transition-colors shadow-sm"><span class="material-symbols-outlined text-[18px]">add</span><span>Add Task</span><kbd class="ml-1 px-1.5 py-0.2 bg-white/20 rounded font-label-md text-label-md text-on-primary">N</kbd></button></div></header><main class="w-full pt-16 bg-canvas min-h-screen"><div class="flex flex-col w-full">
+<!-- Top Workspace Context Header -->
+<div class="px-space-xl py-space-lg bg-surface">
+<div class="max-w-[1280px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div>
+<div class="flex items-center gap-space-xs text-text-muted font-label-md text-label-md uppercase tracking-wider mb-1">
+<span>Preferences</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-accent font-semibold">Workspace Settings</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-text-primary tracking-tight">Settings</h1>
+<p class="font-body-md text-body-md text-text-secondary mt-0.5">Manage your single-user account, local formatting, notifications, Google Calendar sync, and offline storage.</p>
+</div>
+<div class="flex items-center gap-space-sm self-start md:self-auto">
+<div class="flex items-center gap-2 px-space-md py-1.5 rounded-full bg-success/10 text-success font-label-md text-label-md">
+<span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+<span>Cloud &amp; Local Sync Active</span>
+</div>
+<span class="text-text-muted text-body-sm hidden sm:inline">•</span>
+<span class="font-label-md text-label-md text-text-muted hidden sm:inline">v1.1.4 (Build 2024.10)</span>
+</div>
+</div>
+</div>
+<!-- Settings Split Layout -->
+<div class="max-w-[1280px] w-full mx-auto px-space-xl py-space-xl">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
+<!-- Left Sub-Panel Navigation (Sticky on Desktop) -->
+<aside class="lg:col-span-3 sticky top-24 z-20">
+<div class="bg-surface rounded-xl p-space-md shadow-sm">
+<div class="px-space-sm py-space-xs font-label-md text-label-md text-text-muted uppercase tracking-wider mb-space-xs">
+            Sections
+          </div>
+<nav class="flex flex-col gap-1" id="settings-nav">
+<a class="settings-nav-item flex items-center justify-between px-space-md py-2.5 rounded-lg bg-accent-soft text-accent font-headline-md text-body-md transition-all" href="#section-account">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px]">person</span>
+<span>Account</span>
+</div>
+<span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+</a>
+<a class="settings-nav-item flex items-center justify-between px-space-md py-2.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary font-headline-md text-body-md transition-all" href="#section-general">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span>General Preferences</span>
+</div>
+</a>
+<a class="settings-nav-item flex items-center justify-between px-space-md py-2.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary font-headline-md text-body-md transition-all" href="#section-notifications">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px]">notifications_active</span>
+<span>Notifications &amp; Reminders</span>
+</div>
+</a>
+<a class="settings-nav-item flex items-center justify-between px-space-md py-2.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary font-headline-md text-body-md transition-all" href="#section-calendar">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px]">event_repeat</span>
+<span>Google Calendar</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-success/15 text-success">Live</span>
+</a>
+<a class="settings-nav-item flex items-center justify-between px-space-md py-2.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary font-headline-md text-body-md transition-all" href="#section-export">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px]">download_for_offline</span>
+<span>Data &amp; Export</span>
+</div>
+</a>
+<a class="settings-nav-item flex items-center justify-between px-space-md py-2.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary font-headline-md text-body-md transition-all" href="#section-app">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px]">install_desktop</span>
+<span>App &amp; Installation</span>
+</div>
+</a>
+</nav>
+<div class="mt-space-lg pt-space-md">
+<button class="w-full flex items-center gap-space-sm px-space-md py-2.5 rounded-lg text-danger hover:bg-error-container/40 transition-colors text-left font-body-md text-body-md" onclick="document.getElementById('signout-modal').classList.remove('hidden')">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+<span class="font-medium">Sign Out</span>
+</button>
+</div>
+</div>
+<!-- Sync Health Micro-Widget -->
+<div class="mt-space-md p-space-md rounded-xl bg-surface shadow-sm">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-accent text-[18px]">cloud_done</span>
+<span class="font-label-md text-label-md uppercase tracking-wider text-text-muted">Supabase Sync</span>
+</div>
+<div class="flex items-baseline justify-between text-body-sm font-body-sm">
+<span class="text-text-secondary">Latency</span>
+<span class="text-text-primary font-medium">32 ms</span>
+</div>
+<div class="flex items-baseline justify-between text-body-sm font-body-sm mt-1">
+<span class="text-text-secondary">Last snapshot</span>
+<span class="text-text-primary font-medium">14 mins ago</span>
+</div>
+<div class="w-full bg-surface-subtle h-1.5 rounded-full overflow-hidden mt-2.5">
+<div class="bg-accent h-full rounded-full w-full"></div>
+</div>
+</div>
+</aside>
+<!-- Main Settings Content Area -->
+<main class="lg:col-span-9 flex flex-col gap-space-xl">
+<!-- S12-A: Account & Authentication -->
+<section class="bg-surface rounded-xl p-space-lg md:p-space-xl shadow-sm scroll-mt-24" id="section-account">
+<div class="flex items-start justify-between pb-space-lg">
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-accent-soft flex items-center justify-center text-accent">
+<span class="material-symbols-outlined text-[22px]">manage_accounts</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-text-primary tracking-tight">Account &amp; Security</h2>
+<p class="font-body-sm text-body-sm text-text-secondary">Single-user personal profile and workspace persistence settings</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded bg-accent-soft text-accent font-label-md text-label-md font-semibold">Pro License</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-lg pt-space-lg">
+<!-- Email & ID -->
+<div class="flex flex-col gap-1.5 p-space-md rounded-lg bg-surface-subtle">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider">Account Email</span>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-md text-body-md text-text-primary">alex.rivera@designstudio.io</span>
+<span class="material-symbols-outlined text-success text-[16px]" title="Verified Address">check_circle</span>
+</div>
+<span class="text-success font-label-md text-label-md bg-success/10 px-2 py-0.5 rounded font-medium">Verified</span>
+</div>
+</div>
+<!-- Workspace Type -->
+<div class="flex flex-col gap-1.5 p-space-md rounded-lg bg-surface-subtle">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider">Workspace Topology</span>
+<div class="flex items-center justify-between">
+<span class="font-headline-md text-body-md text-text-primary">Personal Workspace (Single-User)</span>
+<span class="text-accent font-label-md text-label-md bg-accent-soft px-2 py-0.5 rounded font-medium">Offline Active</span>
+</div>
+</div>
+<!-- Database Synchronization Status -->
+<div class="flex flex-col gap-1.5 p-space-md rounded-lg bg-surface-subtle">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider">Supabase Authentication &amp; DB</span>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-success"></span>
+<span class="font-body-md text-body-md text-text-primary font-medium">Cloud DB Synced</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary">Backup: 14 mins ago</span>
+</div>
+</div>
+<!-- Offline Storage Mode -->
+<div class="flex flex-col gap-1.5 p-space-md rounded-lg bg-surface-subtle">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider">Local Persistence Engine</span>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-text-primary font-medium">IndexedDB (Encrypted AES-GCM)</span>
+<span class="font-label-md text-label-md text-text-muted">4.8 MB cached</span>
+</div>
+</div>
+</div>
+<div class="mt-space-lg pt-space-md flex flex-wrap items-center justify-between gap-space-md">
+<span class="text-text-muted font-body-sm text-body-sm">All changes reflect across authenticated PWA devices instantly.</span>
+<button class="px-space-md py-2 rounded-lg bg-surface hover:bg-surface-subtle text-danger font-body-sm text-body-sm font-medium transition-colors flex items-center gap-1.5 shadow-sm" onclick="document.getElementById('signout-modal').classList.remove('hidden')">
+<span class="material-symbols-outlined text-[16px]">logout</span>
+<span>Sign Out of Workspace</span>
+</button>
+</div>
+</section>
+<!-- S12-B: General Preferences -->
+<section class="bg-surface rounded-xl p-space-lg md:p-space-xl shadow-sm scroll-mt-24" id="section-general">
+<div class="flex items-start justify-between pb-space-lg">
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-accent-soft flex items-center justify-center text-accent">
+<span class="material-symbols-outlined text-[22px]">tune</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-text-primary tracking-tight">General Preferences</h2>
+<p class="font-body-sm text-body-sm text-text-secondary">Local time display, date formatting, and calendar default slots</p>
+</div>
+</div>
+<button class="px-space-md py-1.5 rounded-lg bg-surface hover:bg-surface-subtle text-text-secondary hover:text-text-primary font-body-sm text-body-sm font-medium transition-colors" onclick="savePreferenceFeedback()">
+              Reset to Defaults
+            </button>
+</div>
+<div class="space-y-space-lg pt-space-lg">
+<!-- Local Timezone Selector -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md p-space-md rounded-lg bg-surface-subtle">
+<div class="max-w-md">
+<label class="block font-headline-md text-body-md text-text-primary" for="timezone-select">Workspace Timezone</label>
+<p class="font-body-sm text-body-sm text-text-secondary">Determines scheduled task deadlines and daily review resets.</p>
+</div>
+<div class="relative min-w-[280px]">
+<select class="w-full h-10 px-space-md py-2 rounded-lg bg-surface text-text-primary font-body-md text-body-md shadow-sm focus:outline-none focus:ring-2 focus:ring-focus cursor-pointer appearance-none" id="timezone-select" onchange="showSaveToast('Timezone updated')">
+<option selected="">America/Los_Angeles (UTC-7) - Detected</option>
+<option>America/New_York (UTC-4)</option>
+<option>Europe/London (UTC+1)</option>
+<option>Europe/Berlin (UTC+2)</option>
+<option>Asia/Tokyo (UTC+9)</option>
+<option>Asia/Kolkata (UTC+5:30)</option>
+<option>UTC (Coordinated Universal Time)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-text-muted pointer-events-none text-[18px]">expand_more</span>
+</div>
+</div>
+<!-- Date Format Segmented Pill -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md p-space-md rounded-lg bg-surface-subtle">
+<div>
+<span class="block font-headline-md text-body-md text-text-primary">Date Format</span>
+<p class="font-body-sm text-body-sm text-text-secondary">Applies across dashboard views, planner lists, and exports.</p>
+</div>
+<div class="inline-flex p-1 bg-surface rounded-lg shadow-sm">
+<button class="px-space-md py-1.5 rounded-md font-label-md text-label-md text-text-secondary hover:text-text-primary transition-all" onclick="selectDatePill(this)" type="button">DD/MM/YYYY</button>
+<button class="px-space-md py-1.5 rounded-md font-label-md text-label-md bg-accent text-on-primary font-semibold shadow-sm transition-all" onclick="selectDatePill(this)" type="button">MM/DD/YYYY</button>
+<button class="px-space-md py-1.5 rounded-md font-label-md text-label-md text-text-secondary hover:text-text-primary transition-all" onclick="selectDatePill(this)" type="button">YYYY-MM-DD</button>
+</div>
+</div>
+<!-- Time Format Segmented Control -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md p-space-md rounded-lg bg-surface-subtle">
+<div>
+<span class="block font-headline-md text-body-md text-text-primary">Time Display Clock</span>
+<p class="font-body-sm text-body-sm text-text-secondary">Format for inline task timers, session intervals, and time tracker logs.</p>
+</div>
+<div class="inline-flex p-1 bg-surface rounded-lg shadow-sm">
+<button class="px-space-md py-1.5 rounded-md font-label-md text-label-md bg-accent text-on-primary font-semibold shadow-sm transition-all" onclick="selectTimePill(this)" type="button">12-hour (am/pm)</button>
+<button class="px-space-md py-1.5 rounded-md font-label-md text-label-md text-text-secondary hover:text-text-primary transition-all" onclick="selectTimePill(this)" type="button">24-hour</button>
+</div>
+</div>
+<!-- Default Calendar Event Duration -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md p-space-md rounded-lg bg-surface-subtle">
+<div class="max-w-md">
+<label class="block font-headline-md text-body-md text-text-primary" for="event-duration-select">Default Calendar Event Duration</label>
+<p class="font-body-sm text-body-sm text-text-secondary">Assigned duration when dragging tasks without explicit planned estimates onto calendar grids.</p>
+</div>
+<div class="relative min-w-[200px]">
+<select class="w-full h-10 px-space-md py-2 rounded-lg bg-surface text-text-primary font-body-md text-body-md shadow-sm focus:outline-none focus:ring-2 focus:ring-focus cursor-pointer appearance-none" id="event-duration-select" onchange="showSaveToast('Default task block updated')">
+<option>30 minutes</option>
+<option>45 minutes</option>
+<option selected="">1 hour (60 min)</option>
+<option>90 minutes</option>
+<option>2 hours (120 min)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-text-muted pointer-events-none text-[18px]">expand_more</span>
+</div>
+</div>
+</div>
+</section>
+<!-- S12-C: Notifications & Reminders -->
+<section class="bg-surface rounded-xl p-space-lg md:p-space-xl shadow-sm scroll-mt-24" id="section-notifications">
+<div class="flex items-start justify-between pb-space-lg">
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-accent-soft flex items-center justify-center text-accent">
+<span class="material-symbols-outlined text-[22px]">notifications_active</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-text-primary tracking-tight">Notifications &amp; Reminders</h2>
+<p class="font-body-sm text-body-sm text-text-secondary">System alerts, scheduled lead-times, and non-intrusive focus guards</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-success/10 text-success font-label-md text-label-md font-medium">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Permission Granted</span>
+</div>
+</div>
+<div class="space-y-space-md pt-space-lg">
+<!-- Toggle: Browser Push -->
+<div class="flex items-center justify-between p-space-md rounded-lg bg-surface-subtle">
+<div class="pr-space-md">
+<div class="font-headline-md text-body-md text-text-primary">Desktop &amp; System Notifications</div>
+<div class="font-body-sm text-body-sm text-text-secondary">Display native OS notifications when tasks are due or when active timers reach target intervals.</div>
+</div>
+<button aria-checked="true" class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-accent transition-colors duration-200 ease-in-out" onclick="toggleSwitch(this)" role="switch" type="button">
+<span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out translate-x-5 mt-0.5 ml-0.5"></span>
+</button>
+</div>
+<!-- Task Reminders Lead Time -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md p-space-md rounded-lg bg-surface-subtle">
+<div>
+<div class="font-headline-md text-body-md text-text-primary">Scheduled Task Reminders</div>
+<div class="font-body-sm text-body-sm text-text-secondary">Trigger advance reminder before tasks scheduled with a specific calendar time.</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="relative min-w-[220px]">
+<select class="w-full h-10 px-space-md py-2 rounded-lg bg-surface text-text-primary font-body-md text-body-md shadow-sm focus:outline-none focus:ring-2 focus:ring-focus cursor-pointer appearance-none" onchange="showSaveToast('Reminder lead time adjusted')">
+<option>At time of event</option>
+<option>5 minutes before</option>
+<option>10 minutes before</option>
+<option selected="">15 minutes before scheduled start</option>
+<option>30 minutes before</option>
+<option>1 hour before</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-text-muted pointer-events-none text-[18px]">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Fallback In-App Banner -->
+<div class="flex items-center justify-between p-space-md rounded-lg bg-surface-subtle">
+<div class="pr-space-md">
+<div class="font-headline-md text-body-md text-text-primary">In-App Fallback Toast</div>
+<div class="font-body-sm text-body-sm text-text-secondary">Show a persistent toast banner within the planner window if system notifications are silenced or offline.</div>
+</div>
+<button aria-checked="true" class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-accent transition-colors duration-200 ease-in-out" onclick="toggleSwitch(this)" role="switch" type="button">
+<span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out translate-x-5 mt-0.5 ml-0.5"></span>
+</button>
+</div>
+</div>
+</section>
+<!-- S12-D / S18: Google Calendar Integration (Comprehensive Card) -->
+<section class="bg-surface rounded-xl p-space-lg md:p-space-xl shadow-sm scroll-mt-24" id="section-calendar">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-space-md pb-space-lg">
+<div class="flex items-start gap-space-md">
+<div class="w-12 h-12 rounded-xl bg-surface-subtle flex items-center justify-center p-2 shrink-0">
+<!-- Google Calendar Brand Mark Inline SVG -->
+<svg class="w-7 h-7" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#FFFFFF" height="48" rx="8" width="48"></rect>
+<path d="M34 10V6H30V10H18V6H14V10H6V42H42V10H34ZM38 38H10V18H38V38Z" fill="#4285F4"></path>
+<path d="M10 18H38V14H10V18Z" fill="#34A853"></path>
+<text fill="#4285F4" font-family="Inter, sans-serif" font-size="14" font-weight="700" text-anchor="middle" x="24" y="32">24</text>
+</svg>
+</div>
+<div>
+<div class="flex items-center gap-space-sm flex-wrap">
+<h2 class="font-headline-lg text-headline-lg text-text-primary tracking-tight">Google Calendar Synchronization</h2>
+<span class="px-2.5 py-0.5 rounded-full bg-success/15 text-success font-label-md text-label-md font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+<span>Connected &amp; Active</span>
+</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary mt-1">Single-direction reflection from My Work Planner into your primary Google Calendar schedule.</p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm self-start">
+<button class="px-space-md py-2 rounded-lg bg-surface hover:bg-surface-subtle text-text-primary font-body-sm text-body-sm font-medium transition-colors flex items-center gap-1.5 shadow-sm" onclick="forceSyncTrigger(this)">
+<span class="material-symbols-outlined text-[16px] sync-icon">sync</span>
+<span>Force Sync Now</span>
+</button>
+</div>
+</div>
+<!-- Sync Direction Banner Note -->
+<div class="mt-space-lg p-space-md rounded-lg bg-accent-soft text-accent flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-[20px] shrink-0 mt-0.5">info</span>
+<div class="font-body-sm text-body-sm">
+<span class="font-semibold text-text-primary">One-Way Sync Notice:</span>
+<span class="text-text-secondary ml-1">My Work Planner → Google Calendar. The planner acts as the authoritative source of truth. Changes made directly inside Google Calendar will not overwrite planner tasks to maintain focused planning purity.</span>
+</div>
+</div>
+<!-- Configuration Fields -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-lg mt-space-lg">
+<!-- Connected Account -->
+<div class="p-space-md rounded-lg bg-surface-subtle">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider block mb-1">Authenticated Account</span>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-text-muted text-[18px]">account_circle</span>
+<span class="font-body-md text-body-md text-text-primary font-medium">alex.rivera@designstudio.io</span>
+</div>
+<span class="text-text-muted font-body-sm text-body-sm">Synced 12m ago</span>
+</div>
+</div>
+<!-- Target Calendar Selector -->
+<div class="p-space-md rounded-lg bg-surface-subtle">
+<label class="font-label-md text-label-md text-text-muted uppercase tracking-wider block mb-1" for="calendar-target-select">Target Destination Calendar</label>
+<div class="relative">
+<select class="w-full h-10 px-space-md py-2 rounded-lg bg-surface text-text-primary font-body-md text-body-md shadow-sm focus:outline-none focus:ring-2 focus:ring-focus cursor-pointer appearance-none" id="calendar-target-select" onchange="showSaveToast('Target calendar updated')">
+<option selected="">Work Calendar (Primary) - [alex.rivera@designstudio.io]</option>
+<option>Planner Deep Work Dedicated</option>
+<option>Client Deadlines (Secondary)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-text-muted pointer-events-none text-[18px]">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Global Sync Controls Toggles -->
+<div class="space-y-space-md mt-space-lg">
+<div class="flex items-center justify-between p-space-md rounded-lg bg-surface-subtle">
+<div class="pr-space-md">
+<div class="font-headline-md text-body-md text-text-primary">Automatically sync new scheduled tasks</div>
+<div class="font-body-sm text-body-sm text-text-secondary">Push task blocks directly to Google Calendar immediately upon setting a start time in planner.</div>
+</div>
+<button aria-checked="true" class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-accent transition-colors duration-200 ease-in-out" onclick="toggleSwitch(this)" role="switch" type="button">
+<span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out translate-x-5 mt-0.5 ml-0.5"></span>
+</button>
+</div>
+<div class="flex items-center justify-between p-space-md rounded-lg bg-surface-subtle">
+<div class="pr-space-md">
+<div class="font-headline-md text-body-md text-text-primary">Sync task completion status</div>
+<div class="font-body-sm text-body-sm text-text-secondary">Preserve calendar event entry upon completion, appending a checkmark badge "[✓]" to the calendar summary title.</div>
+</div>
+<button aria-checked="true" class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-accent transition-colors duration-200 ease-in-out" onclick="toggleSwitch(this)" role="switch" type="button">
+<span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out translate-x-5 mt-0.5 ml-0.5"></span>
+</button>
+</div>
+</div>
+<!-- Sync Rules Note Box -->
+<div class="mt-space-md p-space-md rounded-lg bg-surface-subtle text-text-secondary font-body-sm text-body-sm flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-text-muted text-[18px] shrink-0 mt-0.5">rule</span>
+<span><strong class="text-text-primary">Sync Rule:</strong> Unscheduled Inbox tasks do not generate calendar slots. Moving a scheduled task back to the Inbox automatically purges the corresponding Google Calendar event to keep your external schedule strictly accurate.</span>
+</div>
+<!-- Sync History & Health Mini-Log -->
+<div class="mt-space-lg pt-space-lg">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider block mb-space-sm">Recent Sync Activity</span>
+<div class="space-y-2">
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-subtle font-body-sm text-body-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-success text-[18px]">check_circle</span>
+<span class="font-medium text-text-primary truncate">Finalize Raasta Login Flow</span>
+<span class="text-text-muted hidden sm:inline">• Project: Raasta</span>
+</div>
+<div class="flex items-center gap-space-md shrink-0">
+<span class="text-text-muted">Today, 09:30 AM</span>
+<span class="px-2 py-0.5 rounded bg-success/10 text-success font-label-md text-label-md font-medium">Success</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-subtle font-body-sm text-body-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-success text-[18px]">check_circle</span>
+<span class="font-medium text-text-primary truncate">Review Foundry Kettle Controls</span>
+<span class="text-text-muted hidden sm:inline">• Project: Foundry</span>
+</div>
+<div class="flex items-center gap-space-md shrink-0">
+<span class="text-text-muted">Today, 11:45 AM</span>
+<span class="px-2 py-0.5 rounded bg-success/10 text-success font-label-md text-label-md font-medium">Success</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Disconnect Footer Trigger -->
+<div class="mt-space-lg pt-space-md flex justify-end">
+<button class="text-danger hover:text-error text-body-sm font-body-sm font-medium transition-colors px-2 py-1 rounded hover:bg-error-container/30" onclick="disconnectCalendarModal()">
+              Disconnect Google Calendar Account
+            </button>
+</div>
+</section>
+<!-- S12-F: Data & Export -->
+<section class="bg-surface rounded-xl p-space-lg md:p-space-xl shadow-sm scroll-mt-24" id="section-export">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-space-md pb-space-lg">
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-accent-soft flex items-center justify-center text-accent">
+<span class="material-symbols-outlined text-[22px]">download_for_offline</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-text-primary tracking-tight">Data Portability &amp; Export</h2>
+<p class="font-body-sm text-body-sm text-text-secondary">Export structured logs, timesheets, and complete zero-lock-in workspace snapshots</p>
+</div>
+</div>
+<button class="px-space-lg py-2 rounded-lg bg-accent hover:bg-accent-hover text-on-primary font-body-sm text-body-sm font-medium transition-colors flex items-center gap-1.5 shadow-sm self-start" onclick="triggerExport('zip')">
+<span class="material-symbols-outlined text-[18px]">archive</span>
+<span>Export All Data (.ZIP)</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md pt-space-lg">
+<!-- Card 1: Tasks & Projects -->
+<div class="p-space-md rounded-xl bg-surface-subtle flex flex-col justify-between">
+<div>
+<div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-text-primary mb-space-sm shadow-sm">
+<span class="material-symbols-outlined text-[18px]">checklist</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-text-primary">Tasks &amp; Projects</h3>
+<p class="font-body-sm text-body-sm text-text-secondary mt-1">Full backlog including subtasks, descriptions, tags, and status history.</p>
+</div>
+<div class="mt-space-lg pt-space-sm flex items-center justify-between">
+<span class="font-label-md text-label-md text-text-muted">142 records</span>
+<div class="flex items-center gap-1">
+<button class="px-2 py-1 rounded bg-surface text-text-primary hover:bg-surface-dim font-label-md text-label-md font-semibold transition-colors shadow-sm" onclick="triggerExport('tasks-csv')">.CSV</button>
+<button class="px-2 py-1 rounded bg-surface text-text-primary hover:bg-surface-dim font-label-md text-label-md font-semibold transition-colors shadow-sm" onclick="triggerExport('tasks-xlsx')">.XLSX</button>
+</div>
+</div>
+</div>
+<!-- Card 2: Time Tracking Sessions -->
+<div class="p-space-md rounded-xl bg-surface-subtle flex flex-col justify-between">
+<div>
+<div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-text-primary mb-space-sm shadow-sm">
+<span class="material-symbols-outlined text-[18px]">timer</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-text-primary">Time Sessions Log</h3>
+<p class="font-body-sm text-body-sm text-text-secondary mt-1">Granular timer start/stop stamps, durations, and project allocations.</p>
+</div>
+<div class="mt-space-lg pt-space-sm flex items-center justify-between">
+<span class="font-label-md text-label-md text-text-muted">388 entries</span>
+<div class="flex items-center gap-1">
+<button class="px-2 py-1 rounded bg-surface text-text-primary hover:bg-surface-dim font-label-md text-label-md font-semibold transition-colors shadow-sm" onclick="triggerExport('time-csv')">.CSV</button>
+<button class="px-2 py-1 rounded bg-surface text-text-primary hover:bg-surface-dim font-label-md text-label-md font-semibold transition-colors shadow-sm" onclick="triggerExport('time-xlsx')">.XLSX</button>
+</div>
+</div>
+</div>
+<!-- Card 3: Full JSON Schema Backup -->
+<div class="p-space-md rounded-xl bg-surface-subtle flex flex-col justify-between">
+<div>
+<div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-text-primary mb-space-sm shadow-sm">
+<span class="material-symbols-outlined text-[18px]">data_object</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-text-primary">Workspace JSON</h3>
+<p class="font-body-sm text-body-sm text-text-secondary mt-1">Complete normalized database snapshot for offline restoration or migration.</p>
+</div>
+<div class="mt-space-lg pt-space-sm flex items-center justify-between">
+<span class="font-label-md text-label-md text-text-muted">Schema v1.2</span>
+<button class="px-2.5 py-1 rounded bg-surface text-text-primary hover:bg-surface-dim font-label-md text-label-md font-semibold transition-colors shadow-sm flex items-center gap-1" onclick="triggerExport('json')">
+<span class="material-symbols-outlined text-[14px]">download</span>
+<span>.JSON</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- S12-G: App & Installation (PWA) -->
+<section class="bg-surface rounded-xl p-space-lg md:p-space-xl shadow-sm scroll-mt-24" id="section-app">
+<div class="flex items-start justify-between pb-space-lg">
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-accent-soft flex items-center justify-center text-accent">
+<span class="material-symbols-outlined text-[22px]">install_desktop</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-text-primary tracking-tight">App &amp; PWA Diagnostics</h2>
+<p class="font-body-sm text-body-sm text-text-secondary">Progressive Web App build, offline service worker, and device hardware status</p>
+</div>
+</div>
+<button class="px-space-md py-1.5 rounded-lg bg-surface hover:bg-surface-subtle text-text-secondary hover:text-text-primary font-body-sm text-body-sm font-medium transition-colors" onclick="forceCachePurge()">
+              Refresh Service Worker
+            </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md pt-space-lg">
+<div class="p-space-md rounded-lg bg-surface-subtle">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider block mb-1">Release Version</span>
+<div class="font-headline-md text-body-md text-text-primary">v1.1.4 <span class="font-normal text-text-muted text-body-sm">(Build 2024.10)</span></div>
+<span class="text-text-muted font-body-sm text-body-sm mt-0.5 block">Branch: stable-production</span>
+</div>
+<div class="p-space-md rounded-lg bg-surface-subtle">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider block mb-1">Installation Mode</span>
+<div class="flex items-center gap-1.5 font-headline-md text-body-md text-text-primary">
+<span class="material-symbols-outlined text-accent text-[18px]">laptop_mac</span>
+<span>Standalone Mac OS App</span>
+</div>
+<span class="text-success font-body-sm text-body-sm mt-0.5 block font-medium">Window chrome optimized</span>
+</div>
+<div class="p-space-md rounded-lg bg-surface-subtle">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider block mb-1">Service Worker Cache</span>
+<div class="flex items-center gap-1.5 font-headline-md text-body-md text-text-primary">
+<span class="w-2 h-2 rounded-full bg-success"></span>
+<span>Active &amp; Cache Synced</span>
+</div>
+<span class="text-text-muted font-body-sm text-body-sm mt-0.5 block">100% Offline Ready</span>
+</div>
+</div>
+</section>
+<!-- Sticky Micro-Feedback Bar -->
+<div class="sticky bottom-6 z-30 p-space-md rounded-xl bg-surface/95 backdrop-blur shadow-md flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-space-sm text-text-secondary">
+<span class="material-symbols-outlined text-success text-[18px]">cloud_done</span>
+<span>All preference updates save immediately to local memory and Supabase.</span>
+</div>
+<span class="text-text-muted font-label-md text-label-md hidden sm:inline">Last sync check: 2 seconds ago</span>
+</div>
+</main>
+</div>
+</div>
+<!-- Sign Out Confirmation Modal Dialog -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 hidden" id="signout-modal">
+<div class="bg-surface rounded-xl p-space-xl max-w-md w-full mx-space-md shadow-xl animate-in fade-in zoom-in-95 duration-150">
+<div class="w-12 h-12 rounded-full bg-error-container text-danger flex items-center justify-center mb-space-md">
+<span class="material-symbols-outlined text-[24px]">logout</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-text-primary">Sign out of Workspace?</h3>
+<p class="font-body-md text-body-md text-text-secondary mt-space-xs">
+        Your current session and local offline caches are secured. When you sign back in, your projects and timers will sync seamlessly from the cloud.
+      </p>
+<div class="mt-space-xl flex items-center justify-end gap-space-sm">
+<button class="px-space-md py-2 rounded-lg bg-surface hover:bg-surface-subtle text-text-primary font-body-sm text-body-sm font-medium transition-colors" onclick="document.getElementById('signout-modal').classList.add('hidden')">
+          Cancel
+        </button>
+<button class="px-space-md py-2 rounded-lg bg-danger text-on-error hover:opacity-90 font-body-sm text-body-sm font-medium transition-opacity" onclick="confirmSignOut()">
+          Sign Out
+        </button>
+</div>
+</div>
+</div>
+<!-- Toast Notification Anchor -->
+<div class="fixed bottom-8 right-8 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-space-sm bg-text-primary text-surface px-space-lg py-3 rounded-lg shadow-xl" id="save-toast">
+<span class="material-symbols-outlined text-success text-[20px]">check_circle</span>
+<span class="font-body-md text-body-md font-medium" id="save-toast-message">Changes saved</span>
+</div>
+</div>
+<script>
+  // Simple Pill Selection micro-interactions
+  function selectDatePill(btn) {
+    const parent = btn.parentElement;
+    parent.querySelectorAll('button').forEach(b => {
+      b.className = 'px-space-md py-1.5 rounded-md font-label-md text-label-md text-text-secondary hover:text-text-primary transition-all';
+    });
+    btn.className = 'px-space-md py-1.5 rounded-md font-label-md text-label-md bg-accent text-on-primary font-semibold shadow-sm transition-all';
+    showSaveToast('Date format updated');
+  }
+
+  function selectTimePill(btn) {
+    const parent = btn.parentElement;
+    parent.querySelectorAll('button').forEach(b => {
+      b.className = 'px-space-md py-1.5 rounded-md font-label-md text-label-md text-text-secondary hover:text-text-primary transition-all';
+    });
+    btn.className = 'px-space-md py-1.5 rounded-md font-label-md text-label-md bg-accent text-on-primary font-semibold shadow-sm transition-all';
+    showSaveToast('Clock mode switched');
+  }
+
+  // Toggle Switch logic
+  function toggleSwitch(toggle) {
+    const isChecked = toggle.getAttribute('aria-checked') === 'true';
+    const newState = !isChecked;
+    toggle.setAttribute('aria-checked', newState);
+    const knob = toggle.querySelector('span');
+    
+    if (newState) {
+      toggle.className = 'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-accent transition-colors duration-200 ease-in-out';
+      knob.className = 'inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out translate-x-5 mt-0.5 ml-0.5';
+    } else {
+      toggle.className = 'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full bg-surface-container-high transition-colors duration-200 ease-in-out';
+      knob.className = 'inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out translate-x-0.5 mt-0.5 ml-0.5';
+    }
+    showSaveToast('Preference updated');
+  }
+
+  // Toast feedback helper
+  function showSaveToast(message) {
+    const toast = document.getElementById('save-toast');
+    const label = document.getElementById('save-toast-message');
+    label.textContent = message;
+    toast.classList.remove('translate-y-24', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('translate-y-24', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 2400);
+  }
+
+  function savePreferenceFeedback() {
+    showSaveToast('Preferences reset to workspace defaults');
+  }
+
+  // Calendar Force Sync animation
+  function forceSyncTrigger(btn) {
+    const icon = btn.querySelector('.sync-icon');
+    icon.classList.add('animate-spin');
+    setTimeout(() => {
+      icon.classList.remove('animate-spin');
+      showSaveToast('Google Calendar synchronization completed');
+    }, 1200);
+  }
+
+  function disconnectCalendarModal() {
+    if (confirm('Disconnect Google Calendar synchronization? Scheduled events will no longer mirror.')) {
+      showSaveToast('Calendar disconnected');
+    }
+  }
+
+  function triggerExport(type) {
+    showSaveToast('Generating ' + type.toUpperCase() + ' export package...');
+  }
+
+  function forceCachePurge() {
+    showSaveToast('Service worker cache invalidated & updated');
+  }
+
+  function confirmSignOut() {
+    document.getElementById('signout-modal').classList.add('hidden');
+    showSaveToast('Signing out...');
+  }
+
+  // Highlight active sidebar item on scroll
+  document.addEventListener('DOMContentLoaded', () => {
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.settings-nav-item');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(sec => {
+        const top = sec.offsetTop - 140;
+        if (pageYOffset >= top) {
+          current = sec.getAttribute('id');
+        }
+      });
+
+      navLinks.forEach(link => {
+        const href = link.getAttribute('href').replace('#', '');
+        if (href === current) {
+          link.className = 'settings-nav-item flex items-center justify-between px-space-md py-2.5 rounded-lg bg-accent-soft text-accent font-headline-md text-body-md transition-all';
+        } else {
+          link.className = 'settings-nav-item flex items-center justify-between px-space-md py-2.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary font-headline-md text-body-md transition-all';
+        }
+      });
+    });
+  });
+</script></main></div></body></html>

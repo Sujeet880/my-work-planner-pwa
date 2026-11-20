@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "surface-container-high": "#e7e8ea",
+          "warning": "#B7791F",
+          "surface-dim": "#d9dadc",
+          "primary-fixed": "#dce1ff",
+          "accent-soft": "#EDF1FF",
+          "info": "#3574B8",
+          "on-secondary": "#ffffff",
+          "on-surface-variant": "#444653",
+          "on-tertiary": "#ffffff",
+          "tertiary-container": "#6b707e",
+          "secondary-container": "#dee2f0",
+          "surface-variant": "#e1e2e4",
+          "on-secondary-fixed": "#171c25",
+          "inverse-primary": "#b7c4ff",
+          "inverse-on-surface": "#f0f1f3",
+          "outline": "#747684",
+          "surface-subtle": "#F0F2F5",
+          "on-primary-fixed": "#001551",
+          "on-error": "#ffffff",
+          "text-secondary": "#667085",
+          "focus": "#7895F2",
+          "surface-container-low": "#f2f4f6",
+          "accent": "#4968D6",
+          "canvas": "#F6F7F9",
+          "on-background": "#191c1e",
+          "error": "#ba1a1a",
+          "surface-container": "#edeef0",
+          "on-tertiary-container": "#f4f5ff",
+          "on-surface": "#191c1e",
+          "text-muted": "#98A2B3",
+          "on-secondary-container": "#5f6470",
+          "on-tertiary-fixed-variant": "#424754",
+          "on-tertiary-fixed": "#161b27",
+          "tertiary": "#535865",
+          "accent-hover": "#3D59BE",
+          "on-primary-container": "#f5f4ff",
+          "background": "#f8f9fb",
+          "secondary-fixed": "#dee2f0",
+          "tertiary-fixed-dim": "#c2c6d6",
+          "text-primary": "#202531",
+          "secondary": "#595e6a",
+          "surface-bright": "#f8f9fb",
+          "success": "#16845B",
+          "surface": "#FFFFFF",
+          "on-primary": "#ffffff",
+          "surface-container-highest": "#e1e2e4",
+          "border": "#E4E7EC",
+          "primary-container": "#4968d6",
+          "primary": "#2d4ebc",
+          "secondary-fixed-dim": "#c2c6d4",
+          "on-error-container": "#93000a",
+          "primary-fixed-dim": "#b7c4ff",
+          "surface-container-lowest": "#ffffff",
+          "on-secondary-fixed-variant": "#424752",
+          "error-container": "#ffdad6",
+          "danger": "#C2414B",
+          "surface-tint": "#3555c3",
+          "inverse-surface": "#2e3132",
+          "outline-variant": "#c4c5d5",
+          "tertiary-fixed": "#dee2f3",
+          "on-primary-fixed-variant": "#143caa"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1rem",
+          "space-md": "0.75rem",
+          "space-xs": "0.25rem",
+          "margin": "1.75rem",
+          "space-sm": "0.5rem",
+          "space-lg": "1rem",
+          "space-xl": "1.5rem"
+        },
+        "fontFamily": {
+          "timer-display": [
+            "Inter"
+          ],
+          "body-md": [
+            "Inter"
+          ],
+          "timer-inline": [
+            "Inter"
+          ],
+          "label-md": [
+            "Inter"
+          ],
+          "headline-xl-mobile": [
+            "Inter"
+          ],
+          "headline-lg": [
+            "Inter"
+          ],
+          "headline-xl": [
+            "Inter"
+          ],
+          "body-sm": [
+            "Inter"
+          ],
+          "timer-display-mobile": [
+            "Inter"
+          ],
+          "headline-md": [
+            "Inter"
+          ],
+          "body-lg": [
+            "Inter"
+          ]
+        },
+        "fontSize": {
+          "timer-display": [
+            "28px",
+            {
+              "lineHeight": "34px",
+              "fontWeight": "600"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "400"
+            }
+          ],
+          "timer-inline": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "600"
+            }
+          ],
+          "label-md": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "500"
+            }
+          ],
+          "headline-xl-mobile": [
+            "24px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-lg": [
+            "20px",
+            {
+              "lineHeight": "28px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-xl": [
+            "30px",
+            {
+              "lineHeight": "38px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-sm": [
+            "13px",
+            {
+              "lineHeight": "18px",
+              "fontWeight": "400"
+            }
+          ],
+          "timer-display-mobile": [
+            "22px",
+            {
+              "lineHeight": "28px",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "-0.005em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-lg": [
+            "15px",
+            {
+              "lineHeight": "22px",
+              "fontWeight": "400"
+            }
+          ]
+        }
+      },
+    },
+  };</script></head><body class="bg-canvas text-on-surface font-body-md text-body-md antialiased min-h-screen"><aside class="fixed left-0 top-0 bottom-0 w-[232px] bg-surface border-r border-border z-40 flex flex-col justify-between select-none"><div class="flex flex-col flex-1 overflow-y-auto"><div class="h-16 px-space-lg flex items-center justify-between border-b border-border"><div class="flex items-center gap-space-sm"><img alt="My Work Planner Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrA4VBW5vfN7QKqENNTK5pGBkZ2WA_fBqByzZ8qvYXqoQKNOS5gtbHEGFT1THPoKN8EZMmRcAZt6iLg1Wc_JcJgLZHDysPenRnsSDCkP1DHniq2Tooel8VIGQ4GAwAd76l3Qte2a7Jyxcp5YcfumzEdca9nas9MDxv1OCBoNTWQ0fFJ8s0yaHAa0_8sJ7anXDnANalKu1B98qAREBa2DpewqsLw89arR55AlTmNLsCvs"/><span class="font-headline-md text-headline-md text-text-primary tracking-tight">Planner</span></div><span class="px-1.5 py-0.5 rounded bg-surface-subtle text-text-secondary font-label-md text-label-md">PWA</span></div><div class="px-space-md py-space-lg"><div class="px-space-sm mb-space-xs font-label-md text-label-md text-text-muted uppercase tracking-wider">Workspace</div><nav class="flex flex-col gap-1" data-active-classes="bg-accent-soft text-accent font-medium rounded-lg"><a aria-current="page" class="flex items-center justify-between px-space-sm py-2 transition-colors group bg-accent-soft text-accent font-medium rounded-lg" data-path="dashboard" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">grid_view</span><span class="font-body-md text-body-md">Dashboard</span></div></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors group" data-path="my-tasks" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">check_circle</span><span class="font-body-md text-body-md">My Tasks</span></div><span class="px-1.5 py-0.5 rounded-full bg-surface-subtle text-text-secondary font-label-md text-label-md group-hover:bg-border">8</span></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors group" data-path="time-tracker" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">timer</span><span class="font-body-md text-body-md">Time Tracker</span></div><span class="w-2 h-2 rounded-full bg-success animate-pulse"></span></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors group" data-path="reports" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">bar_chart</span><span class="font-body-md text-body-md">Reports</span></div></a></nav></div><div class="px-space-md py-space-sm"><div class="px-space-sm mb-space-xs font-label-md text-label-md text-text-muted uppercase tracking-wider">Projects</div><nav class="flex flex-col gap-1" data-active-classes="bg-accent-soft text-accent font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="project-raasta" href="#"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="font-body-md text-body-md">Raasta</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="project-foundry" href="#"><span class="w-2 h-2 rounded-full bg-warning"></span><span class="font-body-md text-body-md">Foundry</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="project-personal" href="#"><span class="w-2 h-2 rounded-full bg-info"></span><span class="font-body-md text-body-md">Personal</span></a></nav></div><div class="px-space-md py-space-sm"><div class="px-space-sm mb-space-xs font-label-md text-label-md text-text-muted uppercase tracking-wider">System</div><nav class="flex flex-col gap-1" data-active-classes="bg-accent-soft text-accent font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-md text-body-md">Settings</span></a></nav></div></div><div class="p-space-md border-t border-border"><button class="w-full flex items-center justify-between p-1.5 rounded-lg hover:bg-surface-subtle transition-colors text-left group"><div class="flex items-center gap-space-sm min-w-0"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyrl2cBPqQUhx1EfoLc0OCeecV7sLIVNJRebhpbIDupD3arWT1btikDszcVNRo5PhlXj53Bmd0JoDehpGzvh50q-kr7wvkTPpzTAx6v8t-29ljAiqbnmvPhEaGbaXpWUgNOHgUZzpVRNnFmloFOmyCKZT0yzVAFQmcRGgXCF43mtWn_jzJSs7WI1uT2SLu-y3Ibsl2npzENSf-CSYm2YqbOoKqGyiTezdcnL2nLEk"/><div class="min-w-0"><div class="font-body-md text-body-md font-medium text-text-primary truncate">Alex Rivera</div><div class="font-label-md text-label-md text-text-muted truncate">Product Designer</div></div></div><span class="material-symbols-outlined text-[18px] text-text-muted group-hover:text-text-primary shrink-0">unfold_more</span></button></div></aside><div class="pl-[232px]"><header class="fixed top-0 left-[232px] right-0 h-16 bg-surface border-b border-border z-30 flex items-center justify-between px-space-xl"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-xs text-text-secondary font-body-sm text-body-sm"><span class="material-symbols-outlined text-[16px]">calendar_today</span><span>Thursday, Oct 24, 2024</span></div></div><div class="flex items-center gap-space-md"><button class="flex items-center gap-space-sm h-9 px-space-md rounded-lg border border-border bg-surface-subtle hover:bg-surface text-text-secondary hover:text-text-primary transition-colors"><span class="material-symbols-outlined text-[16px]">search</span><span class="font-body-sm text-body-sm text-text-muted">Search tasks, logs...</span><kbd class="ml-space-md px-1.5 py-0.5 rounded border border-border bg-surface font-label-md text-label-md text-text-muted">⌘K</kbd></button><button aria-label="Notifications" class="relative w-9 h-9 flex items-center justify-center rounded-lg border border-border bg-surface hover:bg-surface-subtle text-text-secondary transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent ring-2 ring-surface"></span></button><button class="flex items-center gap-space-xs h-9 px-space-md rounded-lg bg-accent text-on-primary hover:bg-accent-hover font-body-sm text-body-sm font-medium transition-colors shadow-sm"><span class="material-symbols-outlined text-[18px]">add</span><span>Add Task</span><kbd class="ml-1 px-1.5 py-0.2 bg-white/20 rounded font-label-md text-label-md text-on-primary">N</kbd></button></div></header><main class="w-full pt-16 bg-canvas min-h-screen"><div class="p-8"><div class="flex flex-col w-full relative">
+<!-- DASHBOARD BASE LAYER (Preserved in full context behind modal backdrop) -->
+<div class="w-full flex flex-col gap-8 pb-16">
+<!-- Top Context & Key Metrics Strip -->
+<div class="flex flex-col gap-6">
+<div class="flex flex-wrap items-end justify-between gap-4">
+<div>
+<span class="font-label-md text-label-md text-accent uppercase tracking-wider font-semibold">Today's Focus</span>
+<h1 class="font-headline-xl text-headline-xl text-text-primary tracking-tight mt-1">Deep Work &amp; Delivery</h1>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface shadow-sm text-text-secondary font-body-sm text-body-sm">
+<span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+<span class="font-timer-inline text-timer-inline text-text-primary">02:44:18</span>
+<span class="text-text-muted">logged today</span>
+</div>
+<button class="px-4 py-2 rounded-lg bg-surface shadow-sm hover:bg-surface-subtle text-text-primary font-body-sm text-body-sm font-medium flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span>Customize</span>
+</button>
+</div>
+</div>
+<!-- Metric Bento Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<!-- Metric 1 -->
+<div class="bg-surface rounded-xl p-5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-text-secondary">
+<span class="font-label-md text-label-md uppercase tracking-wider text-text-muted">Target Hours</span>
+<span class="material-symbols-outlined text-[20px] text-accent">schedule</span>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-text-primary">5.2</span>
+<span class="font-body-sm text-body-sm text-text-muted">/ 6.5 hrs</span>
+</div>
+<div class="mt-3 w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+<div class="bg-accent h-full rounded-full" style="width: 80%"></div>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface rounded-xl p-5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-text-secondary">
+<span class="font-label-md text-label-md uppercase tracking-wider text-text-muted">Tasks Completed</span>
+<span class="material-symbols-outlined text-[20px] text-success">check_circle</span>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-text-primary">6</span>
+<span class="font-body-sm text-body-sm text-text-muted">of 9 tasks</span>
+</div>
+<div class="mt-3 w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+<div class="bg-success h-full rounded-full" style="width: 66%"></div>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface rounded-xl p-5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-text-secondary">
+<span class="font-label-md text-label-md uppercase tracking-wider text-text-muted">Active Project</span>
+<span class="w-2.5 h-2.5 rounded-full bg-warning"></span>
+</div>
+<div class="mt-4">
+<span class="font-headline-lg text-headline-lg text-text-primary truncate block">Foundry OS</span>
+<span class="font-body-sm text-body-sm text-text-muted">Core Tokens &amp; Handoff</span>
+</div>
+<div class="mt-3 flex items-center gap-1.5 text-warning font-label-md text-label-md">
+<span class="material-symbols-outlined text-[15px]">priority_high</span>
+<span>High Priority Milestone</span>
+</div>
+</div>
+<!-- Metric 4: Ambient Mini Graph -->
+<div class="bg-surface rounded-xl p-5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-text-secondary">
+<span class="font-label-md text-label-md uppercase tracking-wider text-text-muted">Pacing vs Yesterday</span>
+<span class="material-symbols-outlined text-[18px] text-success">trending_up</span>
+</div>
+<div class="mt-3 flex items-end justify-between h-10 gap-1">
+<div class="w-full bg-surface-subtle rounded-t h-4"></div>
+<div class="w-full bg-surface-subtle rounded-t h-7"></div>
+<div class="w-full bg-surface-subtle rounded-t h-6"></div>
+<div class="w-full bg-surface-subtle rounded-t h-9"></div>
+<div class="w-full bg-surface-subtle rounded-t h-5"></div>
+<div class="w-full bg-accent rounded-t h-10"></div>
+</div>
+<div class="mt-2 text-right">
+<span class="font-label-md text-label-md text-success font-medium">+14% efficiency</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Active Timer Banner (Running Session) -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex items-center justify-between bg-gradient-to-r from-accent-soft/60 via-surface to-surface">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-accent text-on-primary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[22px] animate-pulse">timer</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-md text-headline-md text-text-primary">Design Audit &amp; Tokens Alignment</span>
+<span class="px-2 py-0.5 rounded bg-surface text-accent font-label-md text-label-md font-medium shadow-sm">Foundry</span>
+</div>
+<div class="font-body-sm text-body-sm text-text-secondary flex items-center gap-3 mt-0.5">
+<span>Started at 13:15</span>
+<span class="text-text-muted">•</span>
+<span>Planned: 1h 00m</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-timer-display text-timer-display text-accent tabular-nums tracking-tight">00:48:22</span>
+<div class="flex items-center gap-1.5">
+<button class="w-9 h-9 rounded-lg bg-surface text-warning shadow-sm hover:bg-surface-subtle flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">pause</span>
+</button>
+<button class="w-9 h-9 rounded-lg bg-surface text-danger shadow-sm hover:bg-surface-subtle flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">stop</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Today's Schedule & Task List Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Primary Tasks (2 cols) -->
+<div class="lg:col-span-2 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<h2 class="font-headline-lg text-headline-lg text-text-primary">Today's Agenda</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-text-secondary font-label-md text-label-md">5 tasks pending</span>
+</div>
+<div class="flex items-center gap-1 text-text-muted font-body-sm text-body-sm">
+<span>Sorted by Start Time</span>
+</div>
+</div>
+<!-- Task Item 1 (Running) -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-5 h-5 rounded-full bg-surface-subtle flex items-center justify-center text-text-muted cursor-pointer hover:bg-accent hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<div class="min-w-0">
+<div class="font-body-md text-body-md font-medium text-text-primary truncate">Design Audit &amp; Tokens Alignment</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded text-warning bg-[#FEF3E2] font-label-md text-label-md">Foundry</span>
+<span class="text-text-muted font-body-sm text-body-sm">13:15 – 14:15</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<span class="px-2.5 py-1 rounded-md bg-accent-soft text-accent font-timer-inline text-timer-inline">In Progress</span>
+<button class="w-8 h-8 rounded-lg bg-surface-subtle text-accent flex items-center justify-center hover:bg-accent-soft">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Task Item 2 -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-5 h-5 rounded-full bg-surface-subtle flex items-center justify-center text-text-muted cursor-pointer hover:bg-accent hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<div class="min-w-0">
+<div class="font-body-md text-body-md font-medium text-text-primary truncate">Sync with Mobile Engineering on API Endpoints</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded text-primary bg-[#EDF1FF] font-label-md text-label-md">Raasta</span>
+<span class="text-text-muted font-body-sm text-body-sm">15:00 – 15:45</span>
+<span class="px-1.5 py-0.5 rounded text-danger bg-[#FCE8E9] font-label-md text-label-md">High</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<span class="text-text-muted font-timer-inline text-timer-inline">45m</span>
+<button class="w-8 h-8 rounded-lg bg-surface-subtle text-text-secondary flex items-center justify-center hover:text-accent">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+</div>
+</div>
+<!-- Task Item 3 -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-5 h-5 rounded-full bg-surface-subtle flex items-center justify-center text-text-muted cursor-pointer hover:bg-accent hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<div class="min-w-0">
+<div class="font-body-md text-body-md font-medium text-text-primary truncate">Prepare weekly productivity synthesis report</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded text-info bg-[#EDF1FF] font-label-md text-label-md">Personal</span>
+<span class="text-text-muted font-body-sm text-body-sm">16:30 – 17:15</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<span class="text-text-muted font-timer-inline text-timer-inline">45m</span>
+<button class="w-8 h-8 rounded-lg bg-surface-subtle text-text-secondary flex items-center justify-center hover:text-accent">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+</div>
+</div>
+<!-- Task Item 4 (Completed) -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex items-center justify-between gap-4 opacity-60">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-5 h-5 rounded-full bg-success text-on-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[14px]">done</span>
+</div>
+<div class="min-w-0">
+<div class="font-body-md text-body-md font-medium text-text-secondary line-through truncate">Weekly Team Standup &amp; Sprint Planning</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 rounded text-text-secondary bg-surface-subtle font-label-md text-label-md">Raasta</span>
+<span class="text-text-muted font-body-sm text-body-sm">Completed in 42m</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<span class="text-success font-label-md text-label-md font-medium">Logged</span>
+</div>
+</div>
+</div>
+<!-- Right Column: Visual Timeline Card & Project Balance -->
+<div class="flex flex-col gap-4">
+<h2 class="font-headline-lg text-headline-lg text-text-primary">Allocations</h2>
+<div class="bg-surface rounded-xl p-5 shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md font-medium text-text-primary">Project Workload</span>
+<span class="font-label-md text-label-md text-text-muted">Today</span>
+</div>
+<!-- Project distribution bar -->
+<div class="w-full flex h-3 rounded-full overflow-hidden bg-surface-subtle gap-0.5">
+<div class="bg-primary h-full" style="width: 45%" title="Raasta: 45%"></div>
+<div class="bg-warning h-full" style="width: 35%" title="Foundry: 35%"></div>
+<div class="bg-info h-full" style="width: 20%" title="Personal: 20%"></div>
+</div>
+<!-- Distribution Key -->
+<div class="flex flex-col gap-2.5 pt-2">
+<div class="flex items-center justify-between font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<span class="text-text-primary">Raasta Product</span>
+</div>
+<span class="text-text-secondary font-medium">2h 45m</span>
+</div>
+<div class="flex items-center justify-between font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-warning"></span>
+<span class="text-text-primary">Foundry OS</span>
+</div>
+<span class="text-text-secondary font-medium">1h 55m</span>
+</div>
+<div class="flex items-center justify-between font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-info"></span>
+<span class="text-text-primary">Personal &amp; Planning</span>
+</div>
+<span class="text-text-secondary font-medium">0h 45m</span>
+</div>
+</div>
+<!-- Ambient Workspace Quote / Note -->
+<div class="mt-4 p-3 rounded-lg bg-surface-subtle flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-accent mt-0.5">lightbulb</span>
+<p class="font-body-sm text-body-sm text-text-secondary leading-snug">
+              Keep block between 14:00-15:30 clear for undisturbed design specs export.
+            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- SLIDE-OVER BACKDROP & DRAWER COMPONENT -->
+<!-- Scrim overlay fixed to cover entire viewport under the drawer -->
+<div class="fixed inset-0 bg-[#202531]/30 z-50 backdrop-blur-none transition-opacity duration-300" id="drawer-backdrop">
+<div class="w-full h-full relative">
+<!-- Slide-Over Drawer Container (Anchored Right, 460px width) -->
+<aside aria-labelledby="drawer-title" aria-modal="true" class="absolute right-0 top-0 bottom-0 w-full max-w-[468px] bg-surface shadow-2xl flex flex-col justify-between z-50 transition-transform duration-300 ease-out transform translate-x-0" id="task-drawer" role="dialog">
+<!-- DRAWER HEADER -->
+<div class="px-6 py-5 bg-surface flex items-start justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-accent"></span>
+<h2 class="font-headline-lg text-headline-lg text-text-primary tracking-tight" id="drawer-title">Create New Task</h2>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-1">Add a task to Today or leave unscheduled in Inbox.</p>
+</div>
+<button aria-label="Close drawer" class="w-8 h-8 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-subtle flex items-center justify-center transition-colors" onclick="document.getElementById('drawer-backdrop').classList.add('hidden')" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- DRAWER SCROLLABLE FORM BODY -->
+<div class="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-5">
+<!-- Field 1: Task Title (Active Focus / Typed state) -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md font-semibold text-text-primary flex items-center justify-between" for="task-title">
+<span>Task Title <span class="text-danger">*</span></span>
+<span class="font-normal text-text-muted font-body-sm text-body-sm">Press ↵ to quick save</span>
+</label>
+<div class="relative">
+<input autofocus="" class="w-full h-11 px-3.5 rounded-lg bg-surface text-text-primary font-body-md text-body-md shadow-sm outline-none transition-all placeholder:text-text-muted focus:ring-2 focus:ring-focus focus:bg-white" id="task-title" placeholder="What needs to be done?" type="text" value="Brand Guidelines &amp; Design Token Export"/>
+<span class="absolute right-3 top-3 material-symbols-outlined text-[18px] text-accent">edit_note</span>
+</div>
+</div>
+<!-- Field 2: Description (Textarea) -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md font-medium text-text-secondary" for="task-description">
+              Description <span class="text-text-muted font-normal">(Optional)</span>
+</label>
+<textarea class="w-full p-3 rounded-lg bg-surface text-text-primary font-body-md text-body-md shadow-sm outline-none transition-all placeholder:text-text-muted resize-none focus:ring-2 focus:ring-focus" id="task-description" placeholder="Add extra context, deliverables, or checklist..." rows="3">Consolidate color tokens, typography scales, and spacing units for engineering handoff.</textarea>
+</div>
+<!-- Field 3: Project & Priority (2-Column Grid) -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Project Picker -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md font-medium text-text-secondary" for="task-project">
+                Project / Client
+              </label>
+<div class="relative">
+<div class="absolute left-3 top-3 w-2.5 h-2.5 rounded-full bg-warning pointer-events-none"></div>
+<select class="w-full h-10 pl-8 pr-8 rounded-lg bg-surface text-text-primary font-body-md text-body-md shadow-sm outline-none transition-all cursor-pointer appearance-none focus:ring-2 focus:ring-focus" id="task-project">
+<option value="none">No Project (General)</option>
+<option value="raasta">Raasta Product</option>
+<option selected="" value="foundry">Foundry</option>
+<option value="personal">Personal</option>
+<option value="new">+ New Project</option>
+</select>
+<span class="absolute right-2.5 top-2.5 material-symbols-outlined text-[18px] text-text-muted pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Priority Segmented Control -->
+<div class="flex flex-col gap-1.5">
+<span class="font-label-md text-label-md font-medium text-text-secondary">Priority</span>
+<div class="grid grid-cols-3 h-10 p-1 bg-surface-container rounded-lg gap-1">
+<!-- High Priority -->
+<button class="flex items-center justify-center rounded text-text-muted hover:text-danger hover:bg-surface/60 transition-colors font-label-md text-label-md" type="button">
+                  High
+                </button>
+<!-- Medium Priority (Active Selected) -->
+<button class="flex items-center justify-center rounded bg-surface shadow-sm text-warning font-label-md text-label-md font-semibold transition-all" type="button">
+                  Med
+                </button>
+<!-- Low Priority -->
+<button class="flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-surface/60 transition-colors font-label-md text-label-md" type="button">
+                  Low
+                </button>
+</div>
+</div>
+</div>
+<!-- Field 4: Scheduled Date & Start Time (2-Column Grid) -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Date Picker -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md font-medium text-text-secondary" for="task-date">
+                Scheduled Date
+              </label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-text-muted pointer-events-none">calendar_today</span>
+<input class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface text-text-primary font-body-sm text-body-sm shadow-sm outline-none transition-all focus:ring-2 focus:ring-focus" id="task-date" type="text" value="Today (Thu, Oct 24)"/>
+</div>
+</div>
+<!-- Start Time -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md font-medium text-text-secondary" for="task-time">
+                Scheduled Start
+              </label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-text-muted pointer-events-none">schedule</span>
+<input class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface text-text-primary font-body-sm text-body-sm shadow-sm outline-none transition-all focus:ring-2 focus:ring-focus font-timer-inline" id="task-time" type="text" value="14:00"/>
+</div>
+</div>
+</div>
+<!-- Field 5: Duration & Reminder (2-Column Grid) -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Planned Duration -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md font-medium text-text-secondary flex items-center justify-between" for="task-duration">
+<span>Planned Duration</span>
+</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-text-muted pointer-events-none">timelapse</span>
+<input class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface text-text-primary font-body-sm text-body-sm shadow-sm outline-none transition-all focus:ring-2 focus:ring-focus" id="task-duration" type="text" value="1h 30m"/>
+</div>
+<span class="font-label-md text-label-md text-text-muted leading-tight">Used for planned vs. actual</span>
+</div>
+<!-- Reminder Setting -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md font-medium text-text-secondary" for="task-reminder">
+                Reminder
+              </label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-text-muted pointer-events-none">notifications_active</span>
+<select class="w-full h-10 pl-9 pr-8 rounded-lg bg-surface text-text-primary font-body-sm text-body-sm shadow-sm outline-none transition-all cursor-pointer appearance-none focus:ring-2 focus:ring-focus" id="task-reminder">
+<option value="none">None</option>
+<option value="0">At start time</option>
+<option selected="" value="15">15 minutes before</option>
+<option value="custom">Custom...</option>
+</select>
+<span class="absolute right-2.5 top-2.5 material-symbols-outlined text-[18px] text-text-muted pointer-events-none">expand_more</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted leading-tight">Browser &amp; in-app push</span>
+</div>
+</div>
+<!-- Single-Timer Policy Notice Box (Grounded Minimalist Functionalism) -->
+<div class="p-3.5 rounded-lg bg-surface-subtle flex items-start gap-2.5 mt-1">
+<span class="material-symbols-outlined text-[18px] text-accent shrink-0 mt-0.5">info</span>
+<div class="flex flex-col gap-0.5">
+<span class="font-body-sm text-body-sm font-medium text-text-primary">Single Active Session Rule</span>
+<p class="font-body-sm text-body-sm text-text-secondary leading-snug">
+                Only one timer can run at a time. Starting this task will prompt you to switch or save the current session (<span class="font-medium text-text-primary">Design Audit</span>).
+              </p>
+</div>
+</div>
+<!-- Tags & Quick Shortcuts Strip -->
+<div class="flex items-center gap-2 pt-1">
+<span class="font-label-md text-label-md text-text-muted uppercase">Labels:</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-text-secondary font-label-md text-label-md">tokens</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-text-secondary font-label-md text-label-md">handoff</span>
+<button class="px-2 py-0.5 rounded bg-surface-subtle text-accent hover:bg-accent-soft font-label-md text-label-md transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span>Label</span>
+</button>
+</div>
+</div>
+<!-- DRAWER FOOTER (Fixed at base) -->
+<div class="px-6 py-4 bg-surface-container-low flex items-center justify-between shadow-lg">
+<button class="px-4 py-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-subtle font-body-sm text-body-sm font-medium transition-colors" onclick="document.getElementById('drawer-backdrop').classList.add('hidden')" type="button">
+            Cancel
+          </button>
+<div class="flex items-center gap-2.5">
+<button class="px-4 py-2 rounded-lg bg-surface hover:bg-surface-subtle text-text-primary font-body-sm text-body-sm font-medium shadow-sm transition-colors" type="button">
+              Save as Inbox
+            </button>
+<button class="px-5 py-2.5 rounded-lg bg-accent text-on-primary hover:bg-accent-hover font-body-sm text-body-sm font-medium shadow-md transition-all flex items-center gap-1.5 focus:ring-2 focus:ring-focus" type="button">
+<span class="material-symbols-outlined text-[18px]">add_task</span>
+<span>Save &amp; Add to Today</span>
+</button>
+</div>
+</div>
+</aside>
+</div>
+</div>
+</div></div></main></div></body></html>

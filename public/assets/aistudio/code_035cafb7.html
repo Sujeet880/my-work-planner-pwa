@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "surface-container-high": "#e7e8ea",
+          "warning": "#B7791F",
+          "surface-dim": "#d9dadc",
+          "primary-fixed": "#dce1ff",
+          "accent-soft": "#EDF1FF",
+          "info": "#3574B8",
+          "on-secondary": "#ffffff",
+          "on-surface-variant": "#444653",
+          "on-tertiary": "#ffffff",
+          "tertiary-container": "#6b707e",
+          "secondary-container": "#dee2f0",
+          "surface-variant": "#e1e2e4",
+          "on-secondary-fixed": "#171c25",
+          "inverse-primary": "#b7c4ff",
+          "inverse-on-surface": "#f0f1f3",
+          "outline": "#747684",
+          "surface-subtle": "#F0F2F5",
+          "on-primary-fixed": "#001551",
+          "on-error": "#ffffff",
+          "text-secondary": "#667085",
+          "focus": "#7895F2",
+          "surface-container-low": "#f2f4f6",
+          "accent": "#4968D6",
+          "canvas": "#F6F7F9",
+          "on-background": "#191c1e",
+          "error": "#ba1a1a",
+          "surface-container": "#edeef0",
+          "on-tertiary-container": "#f4f5ff",
+          "on-surface": "#191c1e",
+          "text-muted": "#98A2B3",
+          "on-secondary-container": "#5f6470",
+          "on-tertiary-fixed-variant": "#424754",
+          "on-tertiary-fixed": "#161b27",
+          "tertiary": "#535865",
+          "accent-hover": "#3D59BE",
+          "on-primary-container": "#f5f4ff",
+          "background": "#f8f9fb",
+          "secondary-fixed": "#dee2f0",
+          "tertiary-fixed-dim": "#c2c6d6",
+          "text-primary": "#202531",
+          "secondary": "#595e6a",
+          "surface-bright": "#f8f9fb",
+          "success": "#16845B",
+          "surface": "#FFFFFF",
+          "on-primary": "#ffffff",
+          "surface-container-highest": "#e1e2e4",
+          "border": "#E4E7EC",
+          "primary-container": "#4968d6",
+          "primary": "#2d4ebc",
+          "secondary-fixed-dim": "#c2c6d4",
+          "on-error-container": "#93000a",
+          "primary-fixed-dim": "#b7c4ff",
+          "surface-container-lowest": "#ffffff",
+          "on-secondary-fixed-variant": "#424752",
+          "error-container": "#ffdad6",
+          "danger": "#C2414B",
+          "surface-tint": "#3555c3",
+          "inverse-surface": "#2e3132",
+          "outline-variant": "#c4c5d5",
+          "tertiary-fixed": "#dee2f3",
+          "on-primary-fixed-variant": "#143caa"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "gutter": "1rem",
+          "space-md": "0.75rem",
+          "space-xs": "0.25rem",
+          "margin": "1.75rem",
+          "space-sm": "0.5rem",
+          "space-lg": "1rem",
+          "space-xl": "1.5rem"
+        },
+        "fontFamily": {
+          "timer-display": [
+            "Inter"
+          ],
+          "body-md": [
+            "Inter"
+          ],
+          "timer-inline": [
+            "Inter"
+          ],
+          "label-md": [
+            "Inter"
+          ],
+          "headline-xl-mobile": [
+            "Inter"
+          ],
+          "headline-lg": [
+            "Inter"
+          ],
+          "headline-xl": [
+            "Inter"
+          ],
+          "body-sm": [
+            "Inter"
+          ],
+          "timer-display-mobile": [
+            "Inter"
+          ],
+          "headline-md": [
+            "Inter"
+          ],
+          "body-lg": [
+            "Inter"
+          ]
+        },
+        "fontSize": {
+          "timer-display": [
+            "28px",
+            {
+              "lineHeight": "34px",
+              "fontWeight": "600"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "400"
+            }
+          ],
+          "timer-inline": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "600"
+            }
+          ],
+          "label-md": [
+            "12px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "500"
+            }
+          ],
+          "headline-xl-mobile": [
+            "24px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-lg": [
+            "20px",
+            {
+              "lineHeight": "28px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-xl": [
+            "30px",
+            {
+              "lineHeight": "38px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-sm": [
+            "13px",
+            {
+              "lineHeight": "18px",
+              "fontWeight": "400"
+            }
+          ],
+          "timer-display-mobile": [
+            "22px",
+            {
+              "lineHeight": "28px",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "-0.005em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-lg": [
+            "15px",
+            {
+              "lineHeight": "22px",
+              "fontWeight": "400"
+            }
+          ]
+        }
+      },
+    },
+  };</script></head><body class="bg-canvas text-on-surface font-body-md text-body-md antialiased min-h-screen"><aside class="fixed left-0 top-0 bottom-0 w-[232px] bg-surface border-r border-border z-40 flex flex-col justify-between select-none"><div class="flex flex-col flex-1 overflow-y-auto"><div class="h-16 px-space-lg flex items-center justify-between border-b border-border"><div class="flex items-center gap-space-sm"><img alt="My Work Planner Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrA4VBW5vfN7QKqENNTK5pGBkZ2WA_fBqByzZ8qvYXqoQKNOS5gtbHEGFT1THPoKN8EZMmRcAZt6iLg1Wc_JcJgLZHDysPenRnsSDCkP1DHniq2Tooel8VIGQ4GAwAd76l3Qte2a7Jyxcp5YcfumzEdca9nas9MDxv1OCBoNTWQ0fFJ8s0yaHAa0_8sJ7anXDnANalKu1B98qAREBa2DpewqsLw89arR55AlTmNLsCvs"/><span class="font-headline-md text-headline-md text-text-primary tracking-tight">Planner</span></div><span class="px-1.5 py-0.5 rounded bg-surface-subtle text-text-secondary font-label-md text-label-md">PWA</span></div><div class="px-space-md py-space-lg"><div class="px-space-sm mb-space-xs font-label-md text-label-md text-text-muted uppercase tracking-wider">Workspace</div><nav class="flex flex-col gap-1" data-active-classes="bg-accent-soft text-accent font-medium rounded-lg"><a aria-current="page" class="flex items-center justify-between px-space-sm py-2 transition-colors group bg-accent-soft text-accent font-medium rounded-lg" data-path="dashboard" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">grid_view</span><span class="font-body-md text-body-md">Dashboard</span></div></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors group" data-path="my-tasks" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">check_circle</span><span class="font-body-md text-body-md">My Tasks</span></div><span class="px-1.5 py-0.5 rounded-full bg-surface-subtle text-text-secondary font-label-md text-label-md group-hover:bg-border">8</span></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors group" data-path="time-tracker" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">timer</span><span class="font-body-md text-body-md">Time Tracker</span></div><span class="w-2 h-2 rounded-full bg-success animate-pulse"></span></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors group" data-path="reports" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">bar_chart</span><span class="font-body-md text-body-md">Reports</span></div></a></nav></div><div class="px-space-md py-space-sm"><div class="px-space-sm mb-space-xs font-label-md text-label-md text-text-muted uppercase tracking-wider">Projects</div><nav class="flex flex-col gap-1" data-active-classes="bg-accent-soft text-accent font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="project-raasta" href="#"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="font-body-md text-body-md">Raasta</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="project-foundry" href="#"><span class="w-2 h-2 rounded-full bg-warning"></span><span class="font-body-md text-body-md">Foundry</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="project-personal" href="#"><span class="w-2 h-2 rounded-full bg-info"></span><span class="font-body-md text-body-md">Personal</span></a></nav></div><div class="px-space-md py-space-sm"><div class="px-space-sm mb-space-xs font-label-md text-label-md text-text-muted uppercase tracking-wider">System</div><nav class="flex flex-col gap-1" data-active-classes="bg-accent-soft text-accent font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-text-secondary hover:bg-surface-subtle hover:text-text-primary transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-md text-body-md">Settings</span></a></nav></div></div><div class="p-space-md border-t border-border"><button class="w-full flex items-center justify-between p-1.5 rounded-lg hover:bg-surface-subtle transition-colors text-left group"><div class="flex items-center gap-space-sm min-w-0"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyrl2cBPqQUhx1EfoLc0OCeecV7sLIVNJRebhpbIDupD3arWT1btikDszcVNRo5PhlXj53Bmd0JoDehpGzvh50q-kr7wvkTPpzTAx6v8t-29ljAiqbnmvPhEaGbaXpWUgNOHgUZzpVRNnFmloFOmyCKZT0yzVAFQmcRGgXCF43mtWn_jzJSs7WI1uT2SLu-y3Ibsl2npzENSf-CSYm2YqbOoKqGyiTezdcnL2nLEk"/><div class="min-w-0"><div class="font-body-md text-body-md font-medium text-text-primary truncate">Alex Rivera</div><div class="font-label-md text-label-md text-text-muted truncate">Product Designer</div></div></div><span class="material-symbols-outlined text-[18px] text-text-muted group-hover:text-text-primary shrink-0">unfold_more</span></button></div></aside><div class="pl-[232px]"><header class="fixed top-0 left-[232px] right-0 h-16 bg-surface border-b border-border z-30 flex items-center justify-between px-space-xl"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-xs text-text-secondary font-body-sm text-body-sm"><span class="material-symbols-outlined text-[16px]">calendar_today</span><span>Thursday, Oct 24, 2024</span></div></div><div class="flex items-center gap-space-md"><button class="flex items-center gap-space-sm h-9 px-space-md rounded-lg border border-border bg-surface-subtle hover:bg-surface text-text-secondary hover:text-text-primary transition-colors"><span class="material-symbols-outlined text-[16px]">search</span><span class="font-body-sm text-body-sm text-text-muted">Search tasks, logs...</span><kbd class="ml-space-md px-1.5 py-0.5 rounded border border-border bg-surface font-label-md text-label-md text-text-muted">⌘K</kbd></button><button aria-label="Notifications" class="relative w-9 h-9 flex items-center justify-center rounded-lg border border-border bg-surface hover:bg-surface-subtle text-text-secondary transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent ring-2 ring-surface"></span></button><button class="flex items-center gap-space-xs h-9 px-space-md rounded-lg bg-accent text-on-primary hover:bg-accent-hover font-body-sm text-body-sm font-medium transition-colors shadow-sm"><span class="material-symbols-outlined text-[18px]">add</span><span>Add Task</span><kbd class="ml-1 px-1.5 py-0.2 bg-white/20 rounded font-label-md text-label-md text-on-primary">N</kbd></button></div></header><main class="w-full pt-16 bg-canvas min-h-screen"><div class="p-8"><div class="flex flex-col w-full">
+<!-- Screen Context / Ambient Header -->
+<div class="flex flex-col gap-6 mb-8">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<div class="flex items-center gap-2 mb-1.5">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider">Workspace Overview</span>
+<span class="w-1 h-1 rounded-full bg-border"></span>
+<span class="font-label-md text-label-md text-accent font-medium">Session Idle</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-text-primary tracking-tight">Dashboard</h1>
+<p class="font-body-md text-body-md text-text-secondary mt-1">
+          Good morning, Alex. Here is your overview for today • <span class="text-text-primary font-medium">Thursday, Oct 24</span>.
+        </p>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<button class="flex items-center gap-2 h-10 px-4 rounded-lg bg-surface hover:bg-surface-subtle text-text-primary font-body-sm text-body-sm font-medium shadow-sm transition-colors">
+<span class="material-symbols-outlined text-[18px] text-text-secondary">file_download</span>
+<span>Daily Digest</span>
+</button>
+<button class="flex items-center gap-2 h-10 px-4 rounded-lg bg-accent text-on-primary hover:bg-accent-hover font-body-sm text-body-sm font-medium shadow-sm transition-colors group">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Add Task</span>
+<kbd class="ml-1 px-1.5 py-0.5 rounded bg-white/20 font-label-md text-label-md text-on-primary group-hover:bg-white/30 transition-colors">N</kbd>
+</button>
+</div>
+</div>
+<!-- 4 Key Performance Metrics -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Metric 1: Today's Tasks -->
+<div class="bg-surface rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider font-semibold">Today's Tasks</span>
+<span class="p-2 rounded-lg bg-surface-subtle text-text-secondary">
+<span class="material-symbols-outlined text-[20px]">assignment</span>
+</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-text-primary">8</span>
+<span class="font-body-md text-body-md text-text-secondary">Tasks</span>
+</div>
+<div class="mt-2 flex items-center gap-1.5 font-body-sm text-body-sm text-text-secondary">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-accent"></span>
+<span>5 remaining</span>
+<span class="text-text-muted">•</span>
+<span class="text-success font-medium">3 completed</span>
+</div>
+</div>
+<!-- Metric 2: Completed Progress -->
+<div class="bg-surface rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider font-semibold">Completed</span>
+<span class="p-2 rounded-lg bg-accent-soft text-accent">
+<span class="material-symbols-outlined text-[20px]">task_alt</span>
+</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-text-primary">3</span>
+<span class="font-body-md text-body-md text-text-secondary">of 8</span>
+<span class="ml-auto font-label-md text-label-md text-accent font-medium bg-accent-soft px-2 py-0.5 rounded-full">37.5%</span>
+</div>
+<div class="mt-3 w-full bg-surface-subtle rounded-full h-1.5 overflow-hidden">
+<div class="bg-accent h-1.5 rounded-full transition-all duration-500" style="width: 37.5%"></div>
+</div>
+</div>
+<!-- Metric 3: Planned Time -->
+<div class="bg-surface rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider font-semibold">Planned Time</span>
+<span class="p-2 rounded-lg bg-surface-subtle text-text-secondary">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-text-primary">6<span class="font-headline-md text-headline-md font-normal text-text-secondary ml-0.5">h</span> 30<span class="font-headline-md text-headline-md font-normal text-text-secondary ml-0.5">m</span></span>
+</div>
+<div class="mt-2 flex items-center justify-between font-body-sm text-body-sm text-text-secondary">
+<span>Capacity limit</span>
+<span class="font-medium text-text-primary">8h 00m</span>
+</div>
+</div>
+<!-- Metric 4: Actual Tracked -->
+<div class="bg-surface rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider font-semibold">Actual Tracked</span>
+<span class="p-2 rounded-lg bg-surface-subtle text-text-secondary">
+<span class="material-symbols-outlined text-[20px]">timelapse</span>
+</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-text-primary">2<span class="font-headline-md text-headline-md font-normal text-text-secondary ml-0.5">h</span> 45<span class="font-headline-md text-headline-md font-normal text-text-secondary ml-0.5">m</span></span>
+<span class="font-label-md text-label-md text-success flex items-center ml-auto">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span> On pace
+          </span>
+</div>
+<div class="mt-2 flex items-center justify-between font-body-sm text-body-sm text-text-secondary">
+<span>Pacing balance</span>
+<span class="font-medium text-text-primary">3h 45m left</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Primary Showcase Component: Clean Idle / No Active Timer State -->
+<section class="bg-surface rounded-xl p-6 sm:p-7 shadow-sm mb-8 relative">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+<!-- Left Column: Status, Prompt, Subtext & Context Chip -->
+<div class="flex items-start gap-4 max-w-2xl">
+<div class="w-12 h-12 rounded-xl bg-surface-subtle flex items-center justify-center text-text-secondary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[26px]">hourglass_empty</span>
+</div>
+<div class="space-y-2">
+<div class="flex items-center gap-2.5">
+<span class="px-2.5 py-1 rounded-full bg-surface-subtle text-text-secondary font-label-md text-label-md font-semibold tracking-wide uppercase">
+              No Active Timer
+            </span>
+<span class="inline-flex items-center gap-1 font-body-sm text-body-sm text-text-muted">
+<span class="w-1.5 h-1.5 rounded-full bg-text-muted"></span>
+              Last active session ended 32m ago
+            </span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-text-primary font-semibold">
+            Ready to focus on your next task?
+          </h2>
+<p class="font-body-md text-body-md text-text-secondary">
+            Pick a task below to start tracking your work session, or jump straight into your highest priority planned item.
+          </p>
+<!-- Suggested Target Box -->
+<div class="inline-flex flex-wrap items-center gap-2 pt-1 font-body-sm text-body-sm">
+<span class="font-medium text-text-secondary">Next suggested:</span>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-subtle text-text-primary hover:bg-accent-soft transition-colors cursor-pointer group" onclick="startTimerPrompt('Website Redesign – Login Flow', 'Foundry')">
+<span class="w-2 h-2 rounded-full bg-warning shrink-0"></span>
+<span class="font-medium group-hover:text-accent">Website Redesign – Login Flow</span>
+<span class="text-text-muted">•</span>
+<span class="text-danger font-medium font-label-md text-label-md">High Priority</span>
+<span class="text-text-muted">•</span>
+<span class="text-text-secondary font-label-md text-label-md">2h est.</span>
+<span class="material-symbols-outlined text-[16px] text-accent opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Direct Launch Actions -->
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 lg:pl-6 lg:border-l lg:border-surface-subtle">
+<button class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-on-primary hover:bg-accent-hover font-body-md text-body-md font-medium shadow-sm transition-all active:scale-[0.99]" id="primary-start-btn" onclick="startTimerPrompt('Website Redesign – Login Flow', 'Foundry')">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>Start Website Redesign</span>
+</button>
+<button class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-surface text-text-primary hover:bg-surface-subtle font-body-md text-body-md font-medium shadow-sm transition-colors" onclick="openManualTimeModal()">
+<span class="material-symbols-outlined text-[18px] text-text-secondary">more_time</span>
+<span>Log Manual Time</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 2-Column Work Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Left Column (8 cols): Today's Tasks List -->
+<div class="lg:col-span-8 flex flex-col gap-4">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-3">
+<h3 class="font-headline-md text-headline-md text-text-primary">Today's Tasks</h3>
+<span class="px-2 py-0.5 rounded-full bg-surface-subtle text-text-secondary font-label-md text-label-md font-medium">5 active</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex items-center bg-surface-subtle p-0.5 rounded-lg">
+<button class="px-2.5 py-1 rounded bg-surface font-label-md text-label-md font-medium text-text-primary shadow-xs">All</button>
+<button class="px-2.5 py-1 rounded font-label-md text-label-md text-text-secondary hover:text-text-primary transition-colors">In Progress</button>
+<button class="px-2.5 py-1 rounded font-label-md text-label-md text-text-secondary hover:text-text-primary transition-colors">Planned</button>
+</div>
+<button class="p-1.5 rounded-lg bg-surface hover:bg-surface-subtle text-text-secondary transition-colors" title="Sort &amp; Filter">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Task Cards Strip Container -->
+<div class="bg-surface rounded-xl p-2 shadow-sm flex flex-col gap-1.5">
+<!-- Task Item 1: High Priority / Ready to Launch -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-lg hover:bg-surface-subtle transition-colors gap-3 group">
+<div class="flex items-center gap-3 min-w-0">
+<input class="w-4 h-4 rounded text-accent focus:ring-focus cursor-pointer accent-accent shrink-0" type="checkbox"/>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-medium text-text-primary truncate">Website Redesign – Login Flow</span>
+<span class="px-2 py-0.5 rounded bg-[#FCE8E9] text-danger font-label-md text-label-md font-medium shrink-0">High</span>
+</div>
+<div class="flex items-center gap-2 mt-1 font-body-sm text-body-sm text-text-muted">
+<span class="flex items-center gap-1 text-text-secondary">
+<span class="w-2 h-2 rounded-full bg-warning shrink-0"></span> Foundry
+                </span>
+<span>•</span>
+<span class="text-text-secondary">Est: 2h 00m</span>
+<span>•</span>
+<span class="text-accent font-medium">Logged: 1h 24m</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 self-end sm:self-center shrink-0">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-soft text-accent hover:bg-accent hover:text-on-primary font-body-sm text-body-sm font-medium transition-colors shadow-xs" onclick="startTimerPrompt('Website Redesign – Login Flow', 'Foundry')">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>Start Timer</span>
+</button>
+<button class="p-1 rounded text-text-muted hover:text-text-primary transition-colors opacity-70 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Task Item 2: Raasta Dashboard Screens -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-lg hover:bg-surface-subtle transition-colors gap-3 group">
+<div class="flex items-center gap-3 min-w-0">
+<input class="w-4 h-4 rounded text-accent focus:ring-focus cursor-pointer accent-accent shrink-0" type="checkbox"/>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-medium text-text-primary truncate">Design Dashboard Screens &amp; Shell</span>
+<span class="px-2 py-0.5 rounded bg-[#FCE8E9] text-danger font-label-md text-label-md font-medium shrink-0">High</span>
+</div>
+<div class="flex items-center gap-2 mt-1 font-body-sm text-body-sm text-text-muted">
+<span class="flex items-center gap-1 text-text-secondary">
+<span class="w-2 h-2 rounded-full bg-primary shrink-0"></span> Raasta
+                </span>
+<span>•</span>
+<span class="text-text-secondary">Est: 2h 30m</span>
+<span>•</span>
+<span class="text-text-secondary">Logged: 0h 45m</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 self-end sm:self-center shrink-0">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-soft text-accent hover:bg-accent hover:text-on-primary font-body-sm text-body-sm font-medium transition-colors shadow-xs" onclick="startTimerPrompt('Design Dashboard Screens &amp; Shell', 'Raasta')">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>Start Timer</span>
+</button>
+<button class="p-1 rounded text-text-muted hover:text-text-primary transition-colors opacity-70 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Task Item 3: Client Feedback Annotations -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-lg hover:bg-surface-subtle transition-colors gap-3 group">
+<div class="flex items-center gap-3 min-w-0">
+<input class="w-4 h-4 rounded text-accent focus:ring-focus cursor-pointer accent-accent shrink-0" type="checkbox"/>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-medium text-text-primary truncate">Review Client Feedback &amp; Annotate Wireframes</span>
+<span class="px-2 py-0.5 rounded bg-[#FEF3E2] text-warning font-label-md text-label-md font-medium shrink-0">Medium</span>
+</div>
+<div class="flex items-center gap-2 mt-1 font-body-sm text-body-sm text-text-muted">
+<span class="flex items-center gap-1 text-text-secondary">
+<span class="w-2 h-2 rounded-full bg-warning shrink-0"></span> Foundry
+                </span>
+<span>•</span>
+<span class="text-text-secondary">Est: 1h 00m</span>
+<span>•</span>
+<span class="text-text-muted">Not started</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 self-end sm:self-center shrink-0">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-soft text-accent hover:bg-accent hover:text-on-primary font-body-sm text-body-sm font-medium transition-colors shadow-xs" onclick="startTimerPrompt('Review Client Feedback &amp; Annotate Wireframes', 'Foundry')">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>Start Timer</span>
+</button>
+<button class="p-1 rounded text-text-muted hover:text-text-primary transition-colors opacity-70 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Task Item 4: Personal Documentation -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-lg hover:bg-surface-subtle transition-colors gap-3 group">
+<div class="flex items-center gap-3 min-w-0">
+<input class="w-4 h-4 rounded text-accent focus:ring-focus cursor-pointer accent-accent shrink-0" type="checkbox"/>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-medium text-text-primary truncate">Update Product Documentation &amp; API Specs</span>
+<span class="px-2 py-0.5 rounded bg-[#EDF1FF] text-info font-label-md text-label-md font-medium shrink-0">Low</span>
+</div>
+<div class="flex items-center gap-2 mt-1 font-body-sm text-body-sm text-text-muted">
+<span class="flex items-center gap-1 text-text-secondary">
+<span class="w-2 h-2 rounded-full bg-info shrink-0"></span> Personal
+                </span>
+<span>•</span>
+<span class="text-text-secondary">Est: 1h 00m</span>
+<span>•</span>
+<span class="text-text-muted">Not started</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 self-end sm:self-center shrink-0">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-soft text-accent hover:bg-accent hover:text-on-primary font-body-sm text-body-sm font-medium transition-colors shadow-xs" onclick="startTimerPrompt('Update Product Documentation &amp; API Specs', 'Personal')">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>Start Timer</span>
+</button>
+<button class="p-1 rounded text-text-muted hover:text-text-primary transition-colors opacity-70 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Task Item 5: Completed Task (Raasta) -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-lg bg-surface-subtle/60 gap-3 group opacity-75">
+<div class="flex items-center gap-3 min-w-0">
+<input checked="" class="w-4 h-4 rounded text-success focus:ring-focus cursor-pointer accent-success shrink-0" type="checkbox"/>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-medium text-text-muted line-through truncate">Prepare Design Handoff &amp; Icon Exports</span>
+<span class="px-2 py-0.5 rounded bg-[#E8F5EF] text-success font-label-md text-label-md font-medium shrink-0">Done</span>
+</div>
+<div class="flex items-center gap-2 mt-1 font-body-sm text-body-sm text-text-muted">
+<span class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary shrink-0 opacity-60"></span> Raasta
+                </span>
+<span>•</span>
+<span>Plan: 45m</span>
+<span>•</span>
+<span class="text-success font-medium">Logged: 36m</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 self-end sm:self-center shrink-0">
+<span class="font-label-md text-label-md text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-success">check</span>
+              09:42 AM
+            </span>
+<button class="p-1 rounded text-text-muted hover:text-text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Quick-Add Inline Bar -->
+<div class="bg-surface rounded-xl p-3 shadow-sm flex items-center gap-3 text-text-muted">
+<span class="material-symbols-outlined text-[20px] text-accent pl-1">add_circle</span>
+<input class="bg-transparent font-body-sm text-body-sm text-text-primary placeholder:text-text-muted focus:outline-none flex-1" placeholder="Type a new task name and press Enter (e.g. 'Sync with engineering team')..." type="text"/>
+<span class="font-label-md text-label-md bg-surface-subtle px-2 py-1 rounded text-text-secondary shrink-0">↵ Return</span>
+</div>
+</div>
+<!-- Right Column (4 cols): Data Visualization & Upcoming Tasks -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<!-- Planned vs Actual Widget -->
+<div class="bg-surface rounded-xl p-6 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline-md text-headline-md text-text-primary">Today's Focus Budget</h3>
+<span class="font-label-md text-label-md text-text-muted">Hours</span>
+</div>
+<!-- Inline SVG Visualization Chart -->
+<div class="relative py-2 flex items-center justify-center">
+<svg class="w-44 h-44 -rotate-90 transform" viewbox="0 0 100 100">
+<!-- Background Ring (Planned budget reference: 100%) -->
+<circle class="text-surface-subtle" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-width="9"></circle>
+<!-- Actual Tracked Arc (42.3% of 6.5h planned) -->
+<circle class="text-accent transition-all duration-1000 ease-out" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="144.9" stroke-linecap="round" stroke-width="9"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="font-headline-xl text-headline-xl text-text-primary font-semibold">42%</span>
+<span class="font-label-md text-label-md text-text-muted uppercase tracking-wider">Completed</span>
+</div>
+</div>
+<!-- Metric breakdown labels -->
+<div class="mt-4 pt-4 bg-surface-subtle rounded-lg p-3 space-y-2">
+<div class="flex items-center justify-between font-body-sm text-body-sm">
+<span class="flex items-center gap-2 text-text-secondary">
+<span class="w-2.5 h-2.5 rounded-full bg-accent"></span>
+              Tracked Time
+            </span>
+<span class="font-semibold text-text-primary">2h 45m</span>
+</div>
+<div class="flex items-center justify-between font-body-sm text-body-sm">
+<span class="flex items-center gap-2 text-text-secondary">
+<span class="w-2.5 h-2.5 rounded-full bg-surface-dim"></span>
+              Remaining Planned
+            </span>
+<span class="font-semibold text-text-secondary">3h 45m</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary mt-3 text-center">
+          Optimal daily focus pacing is maintained. No logged overages today.
+        </p>
+</div>
+<!-- Upcoming Work / Next Days Agenda -->
+<div class="bg-surface rounded-xl p-6 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline-md text-headline-md text-text-primary">Upcoming Work</h3>
+<a class="font-label-md text-label-md text-accent hover:text-accent-hover font-medium" href="#">View Calendar</a>
+</div>
+<div class="space-y-4">
+<!-- Upcoming Item 1: Tomorrow -->
+<div class="flex items-start gap-3 pb-3 bg-surface hover:bg-surface-subtle p-2 rounded-lg transition-colors">
+<div class="px-2.5 py-1.5 rounded-lg bg-surface-subtle text-center shrink-0">
+<div class="font-label-md text-label-md text-text-muted uppercase">Fri</div>
+<div class="font-headline-md text-headline-md text-text-primary font-bold">25</div>
+</div>
+<div class="min-w-0 flex-1">
+<div class="font-body-sm text-body-sm font-medium text-text-primary truncate">Design System Documentation</div>
+<div class="font-label-md text-label-md text-text-muted flex items-center gap-1.5 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Raasta • 3h est.
+              </div>
+</div>
+</div>
+<!-- Upcoming Item 2: Monday -->
+<div class="flex items-start gap-3 pb-3 bg-surface hover:bg-surface-subtle p-2 rounded-lg transition-colors">
+<div class="px-2.5 py-1.5 rounded-lg bg-surface-subtle text-center shrink-0">
+<div class="font-label-md text-label-md text-text-muted uppercase">Mon</div>
+<div class="font-headline-md text-headline-md text-text-primary font-bold">28</div>
+</div>
+<div class="min-w-0 flex-1">
+<div class="font-body-sm text-body-sm font-medium text-text-primary truncate">Monthly Invoicing &amp; Timesheet Review</div>
+<div class="font-label-md text-label-md text-text-muted flex items-center gap-1.5 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-info"></span> Personal • 1h est.
+              </div>
+</div>
+</div>
+<!-- Upcoming Item 3: Tuesday -->
+<div class="flex items-start gap-3 bg-surface hover:bg-surface-subtle p-2 rounded-lg transition-colors">
+<div class="px-2.5 py-1.5 rounded-lg bg-surface-subtle text-center shrink-0">
+<div class="font-label-md text-label-md text-text-muted uppercase">Tue</div>
+<div class="font-headline-md text-headline-md text-text-primary font-bold">29</div>
+</div>
+<div class="min-w-0 flex-1">
+<div class="font-body-sm text-body-sm font-medium text-text-primary truncate">Foundry Client Presentation Prep</div>
+<div class="font-label-md text-label-md text-text-muted flex items-center gap-1.5 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-warning"></span> Foundry • 2h 30m est.
+              </div>
+</div>
+</div>
+</div>
+<button class="w-full mt-4 py-2 px-3 rounded-lg bg-surface-subtle hover:bg-surface-dim font-body-sm text-body-sm text-text-secondary hover:text-text-primary font-medium transition-colors text-center">
+          Schedule New Session
+        </button>
+</div>
+</div>
+</div>
+<!-- Interactive Confirmation Dialog for Manual Time Logging -->
+<dialog class="fixed inset-0 m-auto bg-transparent p-0 backdrop:bg-on-background/35 z-50" id="manual-time-modal">
+<div class="bg-surface rounded-xl p-6 shadow-xl w-[90vw] max-w-md">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="p-1.5 rounded-lg bg-accent-soft text-accent">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</span>
+<h4 class="font-headline-md text-headline-md text-text-primary">Log Manual Time</h4>
+</div>
+<button class="text-text-muted hover:text-text-primary" onclick="closeManualTimeModal()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block font-label-md text-label-md font-medium text-text-secondary mb-1">Select Task</label>
+<select class="w-full h-10 px-3 rounded-lg bg-surface-subtle text-text-primary font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-focus">
+<option>Website Redesign – Login Flow (Foundry)</option>
+<option>Design Dashboard Screens &amp; Shell (Raasta)</option>
+<option>Review Client Feedback &amp; Annotate Wireframes (Foundry)</option>
+<option>Update Product Documentation &amp; API Specs (Personal)</option>
+</select>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="block font-label-md text-label-md font-medium text-text-secondary mb-1">Duration (Hours)</label>
+<input class="w-full h-10 px-3 rounded-lg bg-surface-subtle text-text-primary font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-focus" max="12" min="0" type="number" value="1"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md font-medium text-text-secondary mb-1">Minutes</label>
+<input class="w-full h-10 px-3 rounded-lg bg-surface-subtle text-text-primary font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-focus" max="59" min="0" step="5" type="number" value="30"/>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md font-medium text-text-secondary mb-1">Session Note (Optional)</label>
+<input class="w-full h-10 px-3 rounded-lg bg-surface-subtle text-text-primary font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-focus" placeholder="e.g. Iterated on input states and error treatments" type="text"/>
+</div>
+</div>
+<div class="mt-6 flex items-center justify-end gap-3">
+<button class="px-4 py-2 rounded-lg bg-surface-subtle hover:bg-surface-dim text-text-secondary font-body-sm text-body-sm font-medium transition-colors" onclick="closeManualTimeModal()">
+          Cancel
+        </button>
+<button class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-on-primary font-body-sm text-body-sm font-medium transition-colors" onclick="confirmManualLog()">
+          Save Entry
+        </button>
+</div>
+</div>
+</dialog>
+<!-- Interactive JavaScript Micro-interactions -->
+<script>
+    function startTimerPrompt(taskName, project) {
+      // Visual feedback triggering an alert or state progression
+      const btn = document.getElementById('primary-start-btn');
+      if (btn) {
+        btn.classList.add('bg-success');
+        btn.innerHTML = `<span class="material-symbols-outlined text-[20px] animate-spin">refresh</span><span>Starting ${project}...</span>`;
+        setTimeout(() => {
+          btn.classList.remove('bg-success');
+          btn.innerHTML = `<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span><span>Start Website Redesign</span>`;
+          alert(`Timer initiated for "${taskName}". Session tracker is now running.`);
+        }, 600);
+      }
+    }
+
+    const modal = document.getElementById('manual-time-modal');
+    function openManualTimeModal() {
+      if (modal) modal.showModal();
+    }
+    function closeManualTimeModal() {
+      if (modal) modal.close();
+    }
+    function confirmManualLog() {
+      closeManualTimeModal();
+      alert('1h 30m manual focus log successfully appended.');
+    }
+  </script>
+</div></div></main></div></body></html>
