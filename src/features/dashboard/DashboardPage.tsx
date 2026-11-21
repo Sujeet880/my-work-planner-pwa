@@ -7,7 +7,7 @@ import {
 } from '../../lib/timeMath';
 import { DashboardHeader } from './components/DashboardHeader';
 import { ActiveTaskCard } from './components/ActiveTaskCard';
-import { DailyOverview } from './components/DailyOverview';
+import { WorkOverview } from './components/WorkOverview';
 import { TodayTaskList, type DashboardFilter } from './components/TodayTaskList';
 import { UpcomingTasks } from './components/UpcomingTasks';
 import { WeeklyTimeOverview } from './components/WeeklyTimeOverview';
@@ -245,15 +245,10 @@ export function DashboardPage() {
           />
         </div>
 
-        {/* Right Column (~35-40%): Daily Overview, Upcoming Tasks, Weekly Chart */}
+        {/* Right Column (~35-40%): Work Overview, Upcoming Tasks, Weekly Chart */}
         <div className="space-y-6 lg:col-span-5 xl:col-span-5">
-          {/* D. Daily Overview Card */}
-          <DailyOverview
-            completedTodayCount={completedTodayCount}
-            totalTodayCount={totalTodayCount}
-            remainingTodayCount={remainingTodayCount}
-            liveTrackedTodaySeconds={liveTrackedTodaySeconds}
-          />
+          {/* D. Work Overview Card */}
+          <WorkOverview />
 
           {/* F. Upcoming Tasks Card */}
           <UpcomingTasks

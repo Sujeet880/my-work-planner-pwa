@@ -2,6 +2,7 @@ export interface ClientEnvConfig {
   supabaseUrl: string | null;
   supabasePublishableKey: string | null;
   appBaseUrl: string;
+  vapidPublicKey: string | null;
   isSupabaseConfigured: boolean;
   missingClientVars: string[];
 }
@@ -38,6 +39,13 @@ export function getClientEnvConfig(): ClientEnvConfig {
     ) ??
     (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
 
+  const vapidPublicKey = readEnvValue(
+    (typeof import.meta !== 'undefined' && import.meta.env
+      ? import.meta.env.VITE_VAPID_PUBLIC_KEY
+      : undefined) ??
+      (typeof process !== 'undefined' ? process.env?.VITE_VAPID_PUBLIC_KEY : undefined)
+  );
+
   const missingClientVars: string[] = [];
   if (!supabaseUrl) missingClientVars.push('VITE_SUPABASE_URL');
   if (!supabasePublishableKey) missingClientVars.push('VITE_SUPABASE_PUBLISHABLE_KEY');
@@ -46,6 +54,7 @@ export function getClientEnvConfig(): ClientEnvConfig {
     supabaseUrl,
     supabasePublishableKey,
     appBaseUrl,
+    vapidPublicKey,
     isSupabaseConfigured: missingClientVars.length === 0,
     missingClientVars,
   };

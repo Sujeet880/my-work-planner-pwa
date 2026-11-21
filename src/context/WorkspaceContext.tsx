@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { getSupabaseBrowserClient } from '../lib/supabaseClient';
 import { useAuth } from './AuthContext';
 import {
   PREVIEW_CALENDAR_CONNECTION,
@@ -15,6 +16,7 @@ import {
 import { projectService, type SaveProjectInput } from '../services/projectService';
 import { taskService } from '../services/taskService';
 import { timerService } from '../services/timerService';
+import { calendarService } from '../services/calendarService';
 import type {
   ActiveTimerState,
   CalendarConnection,
@@ -24,6 +26,7 @@ import type {
   TaskFormValues,
   TimeEntry,
 } from '../types/models';
+import type { Database } from '../types/database.types';
 
 export interface PendingTimerSwitch {
   targetTaskId: string;
@@ -43,6 +46,9 @@ export interface WorkspaceContextValue {
   // Domain data
   profile: Profile;
   calendarConnection: CalendarConnection;
+  refreshCalendarStatus: () => Promise<void>;
+  retryCalendarSync: () => Promise<void>;
+  isSyncingCalendar: boolean;
   projects: Project[];
   tasks: Task[];
   timeEntries: TimeEntry[];
@@ -125,7 +131,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const { user, profile: authProfile, isAuthenticated, isSupabaseConfigured } = useAuth();
 
   const [profile, setProfile] = useState<Profile>(PREVIEW_PROFILE);
-  const [calendarConnection] = useState<CalendarConnection>(PREVIEW_CALENDAR_CONNECTION);
+  const [calendarConnection, setCalendarConnection] = useState<CalendarConnection>(PREVIEW_CALENDAR_CONNECTION);
+  const [isSyncingCalendar, setIsSyncingCalendar] = useState<boolean>(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
@@ -172,16 +179,17 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [authProfile]);
 
-  // Load real tasks, projects, timer and work sessions when authenticated
+  // Load real tasks, projects, timer, work sessions and calendar status when authenticated
   const loadUserData = useCallback(
     async (userId: string) => {
       setIsLoadingData(true);
       try {
-        const [tasksRes, projectsRes, timerRes, sessionsRes] = await Promise.all([
+        const [tasksRes, projectsRes, timerRes, sessionsRes, calendarRes] = await Promise.all([
           taskService.fetchTasks(userId),
           projectService.fetchProjects(userId),
           timerService.fetchActiveTimer(userId),
           timerService.fetchWorkSessions(userId),
+          calendarService.getIntegrationStatus(userId),
         ]);
 
         if (tasksRes.error) {
@@ -208,6 +216,24 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         } else if (sessionsRes.data) {
           setTimeEntries(sessionsRes.data);
         }
+
+        if (calendarRes.data) {
+          setCalendarConnection({
+            isConfigured: true,
+            isConnected: calendarRes.data.isConnected,
+            provider: 'google',
+            accountEmail: calendarRes.data.accountEmail,
+            selectedCalendarId: calendarRes.data.calendarId,
+            selectedCalendarName: 'Primary Google Calendar',
+            syncEnabled: calendarRes.data.isConnected,
+            lastSyncedAt: calendarRes.data.lastSyncAt,
+            status: calendarRes.data.status,
+            lastError: calendarRes.data.lastError,
+            pendingJobsCount: calendarRes.data.pendingJobsCount,
+            failedJobsCount: calendarRes.data.failedJobsCount,
+            syncedTasksCount: calendarRes.data.syncedTasksCount,
+          });
+        }
       } catch (err) {
         console.error('Error loading workspace data:', err);
         showToast('Could not load workspace data from database.', 'warning');
@@ -228,6 +254,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       setProjects([]);
       setTimeEntries([]);
       setActiveTimer(null);
+      setCalendarConnection(PREVIEW_CALENDAR_CONNECTION);
     } else {
       // Fallback for Milestone 0 preview when Supabase credentials are not configured
       setTasks(PREVIEW_TASKS);
@@ -613,9 +640,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       const plannedMinutes = values.plannedDurationMinutes.trim()
         ? Math.max(1, parseInt(values.plannedDurationMinutes, 10) || 0)
         : null;
-      const reminderOffset = values.reminderOffsetMinutes.trim()
-        ? parseInt(values.reminderOffsetMinutes, 10) || null
-        : null;
+      const reminderOffset =
+        scheduledDate && values.reminderOffsetMinutes.trim()
+          ? parseInt(values.reminderOffsetMinutes, 10) || null
+          : null;
 
       if (existingTaskId) {
         const prevTask = tasks.find((t) => t.id === existingTaskId);
@@ -1099,21 +1127,88 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateProfilePreferences = useCallback(
-    (patch: Partial<Profile>) => {
+    async (patch: Partial<Profile>) => {
       setProfile((prev) => ({
         ...prev,
         ...patch,
         updatedAt: new Date().toISOString(),
       }));
+
+      if (isAuthenticated && user?.id) {
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          const dbPatch: Database['public']['Tables']['profiles']['Update'] = {};
+          if (patch.timezone !== undefined) dbPatch.timezone = patch.timezone;
+          if (patch.dateFormat !== undefined) dbPatch.date_format = patch.dateFormat;
+          if (patch.timeFormat !== undefined) dbPatch.time_format = patch.timeFormat;
+          if (patch.defaultEventDurationMinutes !== undefined)
+            dbPatch.default_event_duration_minutes = patch.defaultEventDurationMinutes;
+          if (patch.defaultReminderOffsetMinutes !== undefined)
+            dbPatch.default_reminder_offset_minutes = patch.defaultReminderOffsetMinutes;
+          if (patch.notificationsEnabled !== undefined)
+            dbPatch.notifications_enabled = patch.notificationsEnabled;
+
+          if (Object.keys(dbPatch).length > 0) {
+            await supabase.from('profiles').update(dbPatch).eq('id', user.id);
+          }
+        }
+      }
+
       showToast('Preferences saved.', 'success');
     },
-    [showToast]
+    [isAuthenticated, showToast, user?.id]
   );
+
+  const refreshCalendarStatus = useCallback(async () => {
+    if (!user?.id) return;
+    const res = await calendarService.getIntegrationStatus(user.id);
+    if (res.data) {
+      setCalendarConnection({
+        isConfigured: true,
+        isConnected: res.data.isConnected,
+        provider: 'google',
+        accountEmail: res.data.accountEmail,
+        selectedCalendarId: res.data.calendarId,
+        selectedCalendarName: 'Primary Google Calendar',
+        syncEnabled: res.data.isConnected,
+        lastSyncedAt: res.data.lastSyncAt,
+        status: res.data.status,
+        lastError: res.data.lastError,
+        pendingJobsCount: res.data.pendingJobsCount,
+        failedJobsCount: res.data.failedJobsCount,
+        syncedTasksCount: res.data.syncedTasksCount,
+      });
+    }
+  }, [user?.id]);
+
+  const retryCalendarSync = useCallback(async () => {
+    if (!user?.id) return;
+    setIsSyncingCalendar(true);
+    try {
+      const res = await calendarService.triggerSync({ retryFailed: true });
+      if (res.error) {
+        showToast(`Sync retry error: ${res.error}`, 'warning');
+      } else {
+        showToast('Calendar synchronization completed.', 'success');
+      }
+      await refreshCalendarStatus();
+      const tasksRes = await taskService.fetchTasks(user.id);
+      if (tasksRes.data) setTasks(tasksRes.data);
+    } catch (err) {
+      console.error('Error retrying calendar sync:', err);
+      showToast('Could not complete calendar sync retry.', 'warning');
+    } finally {
+      setIsSyncingCalendar(false);
+    }
+  }, [refreshCalendarStatus, showToast, user?.id]);
 
   const value = useMemo<WorkspaceContextValue>(
     () => ({
       profile,
       calendarConnection,
+      refreshCalendarStatus,
+      retryCalendarSync,
+      isSyncingCalendar,
       projects,
       tasks,
       timeEntries,
@@ -1177,6 +1272,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       editingTask,
       globalSearchQuery,
       isLoadingData,
+      isSyncingCalendar,
       manualEntryDefaultTaskId,
       manualEntryModalOpen,
       nowMs,
@@ -1188,8 +1284,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       pendingSwitch,
       profile,
       projects,
+      refreshCalendarStatus,
       refreshData,
       resumeActiveTimer,
+      retryCalendarSync,
       saveProject,
       saveTask,
       scheduleTaskToDate,

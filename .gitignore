@@ -12,4 +12,12 @@ coverage/
 .aistudio/
 artifacts/
 supabase/.temp/
+.build/
+.swiftpm/
+native/**/.build/
+native/**/.swiftpm/
 .temp/
+.build/
+.swiftpm/
+native/**/.build/
+native/**/.swiftpm/

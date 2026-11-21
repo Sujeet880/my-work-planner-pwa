@@ -61,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           dateFormat: (data.date_format as Profile['dateFormat']) || 'DD/MM/YYYY',
           timeFormat: (data.time_format as Profile['timeFormat']) || '12h',
           defaultEventDurationMinutes: data.default_event_duration_minutes ?? 60,
+          defaultReminderOffsetMinutes: data.default_reminder_offset_minutes ?? 15,
           notificationsEnabled: data.notifications_enabled ?? true,
           defaultCalendarSyncEnabled: data.default_calendar_sync_enabled ?? false,
           createdAt: data.created_at,
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         date_format: 'DD/MM/YYYY',
         time_format: '12h',
         default_event_duration_minutes: 60,
+        default_reminder_offset_minutes: 15,
         notifications_enabled: true,
         default_calendar_sync_enabled: false,
       };
@@ -96,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           dateFormat: created.date_format as Profile['dateFormat'],
           timeFormat: created.time_format as Profile['timeFormat'],
           defaultEventDurationMinutes: created.default_event_duration_minutes,
+          defaultReminderOffsetMinutes: created.default_reminder_offset_minutes ?? 15,
           notificationsEnabled: created.notifications_enabled,
           defaultCalendarSyncEnabled: created.default_calendar_sync_enabled,
           createdAt: created.created_at,

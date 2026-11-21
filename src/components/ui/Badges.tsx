@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  Bell,
   CalendarOff,
   CheckCircle2,
   Clock,
@@ -161,6 +162,19 @@ export function ProjectLabel({ name, color }: { name: string; color: string }) {
         aria-hidden="true"
       />
       <span className="truncate max-w-[140px]">{name}</span>
+    </span>
+  );
+}
+
+export function ReminderBadge({ offsetMinutes }: { offsetMinutes: number | null }) {
+  if (offsetMinutes === null || offsetMinutes === undefined) {
+    return null;
+  }
+  const label = offsetMinutes === 0 ? 'Reminder at start' : `Reminder ${offsetMinutes}m before`;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-[#EDF2FE] px-2.5 py-0.5 text-[11px] font-semibold text-[#2F65F6] whitespace-nowrap">
+      <Bell className="h-3 w-3" aria-hidden="true" />
+      {label}
     </span>
   );
 }

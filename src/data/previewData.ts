@@ -43,6 +43,7 @@ export const PREVIEW_PROFILE: Profile = {
   dateFormat: 'DD/MM/YYYY',
   timeFormat: '12h',
   defaultEventDurationMinutes: 60,
+  defaultReminderOffsetMinutes: 15,
   notificationsEnabled: false,
   defaultCalendarSyncEnabled: false,
   createdAt: `${twoDaysAgoIso}T08:00:00.000Z`,

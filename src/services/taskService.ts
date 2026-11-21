@@ -1,6 +1,14 @@
 import { getSupabaseBrowserClient } from '../lib/supabaseClient';
-import type { Task, TaskFormValues, TaskStatus } from '../types/models';
+import type {
+  CalendarSyncStatus,
+  Task,
+  TaskFormValues,
+  TaskPriority,
+  TaskStatus,
+} from '../types/models';
 import type { Database } from '../types/database.types';
+import { calendarService } from './calendarService';
+import { reminderService } from './reminderService';
 
 type TaskRow = Database['public']['Tables']['tasks']['Row'];
 
@@ -14,14 +22,14 @@ export function mapTaskFromRow(row: TaskRow): Task {
     projectId: row.project_id,
     title: row.title,
     description: row.description ?? undefined,
-    priority: row.priority,
-    status: row.status,
+    priority: row.priority as TaskPriority,
+    status: row.status as TaskStatus,
     scheduledDate: row.scheduled_date,
     scheduledStartTime: row.scheduled_start_time,
     plannedDurationMinutes: row.planned_duration_minutes,
     reminderOffsetMinutes: row.reminder_offset_minutes,
     syncToGoogleCalendar: row.sync_to_google_calendar,
-    calendarSyncStatus: row.calendar_sync_status,
+    calendarSyncStatus: row.calendar_sync_status as CalendarSyncStatus,
     completedAt: row.completed_at,
     isArchived: row.is_archived,
     createdAt: row.created_at,
@@ -120,8 +128,25 @@ export const taskService = {
         return { data: null, error: error.message };
       }
 
+      const task = data ? mapTaskFromRow(data) : null;
+      if (task && task.syncToGoogleCalendar && task.scheduledDate) {
+        calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
+          console.warn('Calendar sync job enqueue warning:', err);
+        });
+      }
+
+      if (task && task.reminderOffsetMinutes !== null && task.scheduledDate) {
+        reminderService
+          .syncReminderOnTaskChange(task, {
+            customReminderTime: values.reminderCustomTime,
+          })
+          .catch((err) => {
+            console.warn('Reminder sync warning:', err);
+          });
+      }
+
       return {
-        data: data ? mapTaskFromRow(data) : null,
+        data: task,
         error: null,
       };
     } catch (err) {
@@ -187,8 +212,25 @@ export const taskService = {
         return { data: null, error: error.message };
       }
 
+      const task = data ? mapTaskFromRow(data) : null;
+      if (task && task.syncToGoogleCalendar && task.scheduledDate) {
+        calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
+          console.warn('Calendar sync job enqueue warning:', err);
+        });
+      }
+
+      if (task && task.reminderOffsetMinutes !== null && task.scheduledDate) {
+        reminderService
+          .syncReminderOnTaskChange(task, {
+            customReminderTime: values.reminderCustomTime,
+          })
+          .catch((err) => {
+            console.warn('Reminder sync warning:', err);
+          });
+      }
+
       return {
-        data: data ? mapTaskFromRow(data) : null,
+        data: task,
         error: null,
       };
     } catch (err) {
@@ -232,8 +274,23 @@ export const taskService = {
         return { data: null, error: error.message };
       }
 
+      const task = data ? mapTaskFromRow(data) : null;
+      if (task && task.syncToGoogleCalendar && task.scheduledDate) {
+        calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
+          console.warn('Calendar sync job enqueue warning:', err);
+        });
+      }
+
+      if (task && task.reminderOffsetMinutes !== null && task.scheduledDate) {
+        reminderService
+          .syncReminderOnTaskChange(task)
+          .catch((err) => {
+            console.warn('Reminder sync warning:', err);
+          });
+      }
+
       return {
-        data: data ? mapTaskFromRow(data) : null,
+        data: task,
         error: null,
       };
     } catch (err) {
@@ -276,8 +333,23 @@ export const taskService = {
         return { data: null, error: error.message };
       }
 
+      const task = data ? mapTaskFromRow(data) : null;
+      if (task && task.syncToGoogleCalendar && task.scheduledDate) {
+        calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
+          console.warn('Calendar sync job enqueue warning:', err);
+        });
+      }
+
+      if (task && task.reminderOffsetMinutes !== null && task.scheduledDate) {
+        reminderService
+          .syncReminderOnTaskChange(task)
+          .catch((err) => {
+            console.warn('Reminder sync warning:', err);
+          });
+      }
+
       return {
-        data: data ? mapTaskFromRow(data) : null,
+        data: task,
         error: null,
       };
     } catch (err) {
@@ -338,6 +410,16 @@ export const taskService = {
     }
 
     try {
+      // Queue remote calendar deletion before deleting task from database
+      await calendarService.queueSyncJob(taskId, 'delete').catch((err) => {
+        console.warn('Calendar delete sync enqueue warning:', err);
+      });
+
+      // Cancel any pending reminders
+      await reminderService.cancelReminder(taskId).catch((err) => {
+        console.warn('Reminder cancellation warning:', err);
+      });
+
       const { error } = await supabase
         .from('tasks')
         .delete()

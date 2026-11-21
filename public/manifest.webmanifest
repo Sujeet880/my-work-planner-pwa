@@ -9,6 +9,7 @@
   "orientation": "any",
   "background_color": "#F6F7F9",
   "theme_color": "#4968D6",
+  "categories": ["productivity", "utilities"],
   "icons": [
     {
       "src": "/pwa-192x192.png",
@@ -27,6 +28,18 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today Tasks",
+      "url": "/tasks?tab=today",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Time Tracker",
+      "url": "/time-tracker",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
     }
   ]
 }

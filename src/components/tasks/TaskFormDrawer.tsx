@@ -6,37 +6,57 @@ import { Button } from '../ui/Button';
 import { Drawer } from '../ui/Drawer';
 import { FieldWrapper, Input, Select, Textarea } from '../ui/Field';
 
+const STANDARD_OFFSETS = ['0', '5', '10', '15', '30', '60'];
+
 function buildInitialValues(
   editingTask: ReturnType<typeof useWorkspace>['editingTask'],
-  defaultDate: string | null
-): TaskFormValues {
+  defaultDate: string | null,
+  defaultReminderOffset: number = 15
+): { formValues: TaskFormValues; isCustom: boolean; customOffset: string } {
   if (editingTask) {
-    return {
-      title: editingTask.title,
-      description: editingTask.description ?? '',
-      projectId: editingTask.projectId,
-      priority: editingTask.priority,
-      scheduledDate: editingTask.scheduledDate ?? '',
-      scheduledStartTime: editingTask.scheduledStartTime ?? '',
-      plannedDurationMinutes: editingTask.plannedDurationMinutes
-        ? String(editingTask.plannedDurationMinutes)
-        : '',
-      reminderOffsetMinutes: editingTask.reminderOffsetMinutes
+    const rawOffset =
+      editingTask.reminderOffsetMinutes !== null && editingTask.reminderOffsetMinutes !== undefined
         ? String(editingTask.reminderOffsetMinutes)
-        : '',
-      syncToGoogleCalendar: false,
+        : '';
+    const isCustom = Boolean(rawOffset && !STANDARD_OFFSETS.includes(rawOffset));
+    return {
+      formValues: {
+        title: editingTask.title,
+        description: editingTask.description ?? '',
+        projectId: editingTask.projectId,
+        priority: editingTask.priority,
+        scheduledDate: editingTask.scheduledDate ?? '',
+        scheduledStartTime: editingTask.scheduledStartTime ?? '',
+        plannedDurationMinutes: editingTask.plannedDurationMinutes
+          ? String(editingTask.plannedDurationMinutes)
+          : '',
+        reminderOffsetMinutes: rawOffset,
+        reminderCustomTime: '09:00',
+        syncToGoogleCalendar: false,
+      },
+      isCustom,
+      customOffset: isCustom ? rawOffset : '',
     };
   }
+
+  const initialOffset = defaultDate ? String(defaultReminderOffset) : '';
+  const isCustom = Boolean(initialOffset && !STANDARD_OFFSETS.includes(initialOffset));
+
   return {
-    title: '',
-    description: '',
-    projectId: null,
-    priority: 'medium',
-    scheduledDate: defaultDate ?? '',
-    scheduledStartTime: '',
-    plannedDurationMinutes: '',
-    reminderOffsetMinutes: '',
-    syncToGoogleCalendar: false,
+    formValues: {
+      title: '',
+      description: '',
+      projectId: null,
+      priority: 'medium',
+      scheduledDate: defaultDate ?? '',
+      scheduledStartTime: '',
+      plannedDurationMinutes: '',
+      reminderOffsetMinutes: initialOffset,
+      reminderCustomTime: '09:00',
+      syncToGoogleCalendar: false,
+    },
+    isCustom,
+    customOffset: isCustom ? initialOffset : '',
   };
 }
 
@@ -47,22 +67,51 @@ export function TaskFormDrawer() {
     taskDrawerDefaultDate,
     closeTaskDrawer,
     projects,
+    profile,
     saveTask,
   } = useWorkspace();
 
-  const [values, setValues] = useState<TaskFormValues>(() =>
-    buildInitialValues(editingTask, taskDrawerDefaultDate)
+  const [initialData] = useState(() =>
+    buildInitialValues(editingTask, taskDrawerDefaultDate, profile?.defaultReminderOffsetMinutes ?? 15)
   );
-  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [values, setValues] = useState<TaskFormValues>(initialData.formValues);
+  const [isCustomOffset, setIsCustomOffset] = useState<boolean>(initialData.isCustom);
+  const [customOffsetMinutes, setCustomOffsetMinutes] = useState<string>(initialData.customOffset);
+  const [errors, setErrors] = useState<ValidationErrors & { reminderCustomTime?: string; customOffset?: string }>({});
 
   useEffect(() => {
     if (taskDrawerOpen) {
-      setValues(buildInitialValues(editingTask, taskDrawerDefaultDate));
+      const data = buildInitialValues(
+        editingTask,
+        taskDrawerDefaultDate,
+        profile?.defaultReminderOffsetMinutes ?? 15
+      );
+      setValues(data.formValues);
+      setIsCustomOffset(data.isCustom);
+      setCustomOffsetMinutes(data.customOffset);
       setErrors({});
     }
-  }, [taskDrawerOpen, editingTask, taskDrawerDefaultDate]);
+  }, [taskDrawerOpen, editingTask, taskDrawerDefaultDate, profile?.defaultReminderOffsetMinutes]);
 
   const activeProjects = projects.filter((p) => !p.isArchived);
+
+  const handleReminderSelectChange = (val: string) => {
+    if (val === 'custom') {
+      setIsCustomOffset(true);
+      setValues((v) => ({ ...v, reminderOffsetMinutes: customOffsetMinutes || '45' }));
+    } else {
+      setIsCustomOffset(false);
+      setValues((v) => ({ ...v, reminderOffsetMinutes: val }));
+    }
+    if (errors.reminderCustomTime) {
+      setErrors((prev) => ({ ...prev, reminderCustomTime: '' }));
+    }
+  };
+
+  const handleCustomOffsetChange = (val: string) => {
+    setCustomOffsetMinutes(val);
+    setValues((v) => ({ ...v, reminderOffsetMinutes: val }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,12 +121,41 @@ export function TaskFormDrawer() {
       scheduledStartTime: values.scheduledStartTime,
       plannedDurationMinutes: values.plannedDurationMinutes,
     });
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+
+    const extendedErrors: ValidationErrors & { reminderCustomTime?: string; customOffset?: string } = {
+      ...validationErrors,
+    };
+
+    // Date-only reminder rule: requires explicit reminder time, never midnight
+    if (
+      values.scheduledDate &&
+      !values.scheduledStartTime &&
+      values.reminderOffsetMinutes &&
+      (!values.reminderCustomTime || !values.reminderCustomTime.trim())
+    ) {
+      extendedErrors.reminderCustomTime =
+        'Date-only tasks require an explicit reminder time (never defaults to midnight).';
+    }
+
+    if (isCustomOffset && values.reminderOffsetMinutes) {
+      const parsed = parseInt(values.reminderOffsetMinutes, 10);
+      if (isNaN(parsed) || parsed < 0) {
+        extendedErrors.customOffset = 'Please enter a valid positive offset in minutes.';
+      }
+    }
+
+    if (Object.keys(extendedErrors).length > 0) {
+      setErrors(extendedErrors);
       return;
     }
 
-    saveTask(values, editingTask?.id);
+    // Unscheduled inbox tasks cannot have reminders
+    const finalValues: TaskFormValues = {
+      ...values,
+      reminderOffsetMinutes: values.scheduledDate ? values.reminderOffsetMinutes : '',
+    };
+
+    saveTask(finalValues, editingTask?.id);
     closeTaskDrawer();
   };
 
@@ -86,6 +164,9 @@ export function TaskFormDrawer() {
     { value: 'medium', label: 'Medium' },
     { value: 'low', label: 'Low' },
   ];
+
+  const isInboxTask = !values.scheduledDate;
+  const isDateOnlyTask = Boolean(values.scheduledDate && !values.scheduledStartTime);
 
   return (
     <Drawer
@@ -225,6 +306,7 @@ export function TaskFormDrawer() {
                   ...v,
                   scheduledDate: nextDate,
                   scheduledStartTime: nextDate ? v.scheduledStartTime : '',
+                  reminderOffsetMinutes: nextDate ? v.reminderOffsetMinutes : '',
                 }));
                 if (nextDate && errors.scheduledStartTime) {
                   setErrors((prev) => ({ ...prev, scheduledStartTime: '' }));
@@ -297,31 +379,86 @@ export function TaskFormDrawer() {
             />
           </FieldWrapper>
 
-          <FieldWrapper id="task-reminder" label="Reminder">
+          <FieldWrapper
+            id="task-reminder"
+            label="Task Reminder"
+            helperText={
+              isInboxTask
+                ? 'Reminders require a scheduled date'
+                : 'Pushes notification to device'
+            }
+          >
             <Select
               id="task-reminder"
-              value={values.reminderOffsetMinutes}
-              onChange={(e) =>
-                setValues((v) => ({
-                  ...v,
-                  reminderOffsetMinutes: e.target.value,
-                }))
-              }
-              className="h-10 rounded-xl"
+              disabled={isInboxTask}
+              value={isCustomOffset ? 'custom' : values.reminderOffsetMinutes}
+              onChange={(e) => handleReminderSelectChange(e.target.value)}
+              className="h-10 rounded-xl disabled:opacity-40"
             >
               <option value="">No reminder</option>
-              <option value="0">At start time</option>
-              <option value="15">15 minutes before</option>
+              <option value="0">At start time (0 min)</option>
+              <option value="5">5 minutes before</option>
+              <option value="10">10 minutes before</option>
+              <option value="15">15 minutes before (Default)</option>
               <option value="30">30 minutes before</option>
-              <option value="60">1 hour before</option>
+              <option value="60">1 hour before (60 min)</option>
+              <option value="custom">Custom offset...</option>
             </Select>
           </FieldWrapper>
         </div>
 
+        {/* Custom Offset Input when selected */}
+        {isCustomOffset && !isInboxTask && (
+          <FieldWrapper
+            id="task-custom-offset"
+            label="Custom Reminder Offset (minutes before)"
+            error={errors.customOffset}
+            helperText="Enter minutes before start time to trigger reminder."
+          >
+            <Input
+              id="task-custom-offset"
+              type="number"
+              min={0}
+              max={1440}
+              placeholder="e.g., 45"
+              value={customOffsetMinutes}
+              onChange={(e) => handleCustomOffsetChange(e.target.value)}
+              hasError={Boolean(errors.customOffset)}
+              className="h-10 rounded-xl"
+            />
+          </FieldWrapper>
+        )}
+
+        {/* Explicit Reminder Time for Date-Only Tasks */}
+        {isDateOnlyTask && values.reminderOffsetMinutes && (
+          <div className="rounded-xl border border-[#EDF2FE] bg-[#F8FAFD] p-3.5 space-y-2">
+            <FieldWrapper
+              id="task-date-only-reminder-time"
+              label="Reminder Time (Explicit time required)"
+              error={errors.reminderCustomTime}
+              helperText="Date-only tasks require an explicit time (never defaults to midnight)."
+            >
+              <Input
+                id="task-date-only-reminder-time"
+                type="time"
+                value={values.reminderCustomTime || '09:00'}
+                onChange={(e) => {
+                  setValues((v) => ({ ...v, reminderCustomTime: e.target.value }));
+                  if (errors.reminderCustomTime) {
+                    setErrors((prev) => ({ ...prev, reminderCustomTime: '' }));
+                  }
+                }}
+                hasError={Boolean(errors.reminderCustomTime)}
+                className="h-10 rounded-xl bg-white"
+              />
+            </FieldWrapper>
+          </div>
+        )}
+
         {/* Contextual notice */}
-        {!values.scheduledDate && (
+        {isInboxTask && (
           <p className="text-xs text-[#7E8B9B] bg-[#F8FAFD] border border-[#E9ECF5] rounded-xl p-3">
-            💡 This task is unscheduled and will be saved to your <strong>Inbox</strong>. You can schedule it anytime.
+            💡 This task is unscheduled and will be saved to your <strong>Inbox</strong>. Reminders will be disabled until a scheduled date is set.
           </p>
         )}
       </form>

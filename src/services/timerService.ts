@@ -35,7 +35,7 @@ export function mapActiveTimerFromRow(row: ActiveTimerRow): ActiveTimerState {
 
   return {
     taskId: row.task_id,
-    status: row.state,
+    status: row.state as 'running' | 'paused',
     startedAtMs,
     accumulatedBeforeSegmentSeconds: 0,
     sessionStartedAtIso: row.segment_started_at || row.created_at,

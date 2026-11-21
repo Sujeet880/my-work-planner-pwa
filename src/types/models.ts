@@ -16,6 +16,33 @@ export type ReportPeriod = 'daily' | 'weekly' | 'monthly' | 'custom';
 
 export type TaskViewTab = 'today' | 'upcoming' | 'inbox' | 'all' | 'completed';
 
+export type ReminderStatus = 'scheduled' | 'sent' | 'cancelled' | 'failed';
+
+export interface TaskReminder {
+  id: string;
+  userId: string;
+  taskId: string;
+  remindAt: string;
+  timezone: string;
+  status: ReminderStatus;
+  sentAt: string | null;
+  attemptCount: number;
+  lastError?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PushSubscriptionRecord {
+  id: string;
+  userId: string;
+  endpoint: string;
+  p256dhKey: string;
+  authKey: string;
+  userAgent?: string | null;
+  createdAt: string;
+  lastSuccessAt?: string | null;
+}
+
 export interface Profile {
   id: string;
   email: string;
@@ -24,6 +51,7 @@ export interface Profile {
   dateFormat: DateFormatPreference;
   timeFormat: TimeFormatPreference;
   defaultEventDurationMinutes: number; // Default: 60
+  defaultReminderOffsetMinutes: number; // Default: 15
   notificationsEnabled: boolean;
   defaultCalendarSyncEnabled: boolean;
   createdAt: string;
@@ -93,6 +121,11 @@ export interface CalendarConnection {
   selectedCalendarName: string | null;
   syncEnabled: boolean;
   lastSyncedAt: string | null;
+  status?: 'connected' | 'disconnected' | 'error' | 'needs_reauth';
+  lastError?: string | null;
+  pendingJobsCount?: number;
+  failedJobsCount?: number;
+  syncedTasksCount?: number;
 }
 
 export interface TaskFormValues {
@@ -104,6 +137,7 @@ export interface TaskFormValues {
   scheduledStartTime: string;
   plannedDurationMinutes: string;
   reminderOffsetMinutes: string;
+  reminderCustomTime?: string;
   syncToGoogleCalendar: boolean;
 }
 

@@ -29,6 +29,7 @@ import {
   CalendarSyncBadge,
   EntryTypeBadge,
   PriorityBadge,
+  ReminderBadge,
   StatusBadge,
 } from '../../components/ui/Badges';
 import { Button } from '../../components/ui/Button';
@@ -42,6 +43,7 @@ export function TaskDetailsPage() {
     tasks,
     projects,
     timeEntries,
+    calendarConnection,
     activeTimer,
     nowMs,
     openEditTaskDrawer,
@@ -187,6 +189,7 @@ export function TaskDetailsPage() {
                 timerState={isThisTaskActive ? activeTimer?.status ?? null : null}
               />
               <PriorityBadge priority={task.priority} />
+              <ReminderBadge offsetMinutes={task.reminderOffsetMinutes} />
               {project && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EDF2FE] px-2.5 py-0.5 text-xs font-semibold text-[#2F65F6]">
                   <Folder className="h-3 w-3" />
@@ -435,8 +438,9 @@ export function TaskDetailsPage() {
             <div className="mt-3 flex items-start gap-2 rounded-xl bg-[#F8FAFD] p-3 text-xs text-[#7E8B9B]">
               <CalendarOff className="mt-0.5 h-4 w-4 shrink-0 text-[#98A2B3]" />
               <span>
-                One-way sync (My Work Planner → Google Calendar) will push scheduled tasks once
-                OAuth credentials are configured.
+                {calendarConnection.isConnected
+                  ? 'Scheduled tasks are automatically synchronized one-way to your Google Calendar.'
+                  : 'Connect your Google Calendar in Settings to automatically synchronize scheduled tasks one-way.'}
               </span>
             </div>
 

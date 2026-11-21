@@ -23,7 +23,7 @@ max_client_conn = 100
 [auth]
 enabled = true
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000/**"]
+additional_redirect_urls = ["http://localhost:3000/**", "myworkplanner-minitimer://auth/callback", "myworkplanner-minitimer://**"]
 jwt_expiry = 3600
 enable_signup = true
 
@@ -31,3 +31,12 @@ enable_signup = true
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
+
+[functions.google-calendar-auth]
+verify_jwt = false
+
+[functions.google-calendar-sync]
+verify_jwt = false
+
+[functions.dispatch-task-reminders]
+verify_jwt = false
