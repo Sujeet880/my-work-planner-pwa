@@ -1,21 +1,39 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { getClientEnvConfig } from './env';
+import type { Database } from '../types/database.types';
+import { getClientEnvConfig, type ClientEnvConfig } from './env';
 
-let cachedClient: SupabaseClient | null = null;
+let cachedClient: SupabaseClient<Database> | null = null;
 
 /**
- * Returns a configured browser Supabase client when VITE_SUPABASE_URL and
- * VITE_SUPABASE_PUBLISHABLE_KEY are set. Returns null cleanly in Milestone 0
- * before external Supabase provisioning is approved by the owner.
+ * Validates the current Vite environment configuration for Supabase.
+ * Strictly checks for VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.
  */
-export function getSupabaseBrowserClient(): SupabaseClient | null {
+export function validateSupabaseConfig(): {
+  isValid: boolean;
+  config: ClientEnvConfig;
+  missingVars: string[];
+} {
   const config = getClientEnvConfig();
-  if (!config.isSupabaseConfigured || !config.supabaseUrl || !config.supabasePublishableKey) {
+  return {
+    isValid: config.isSupabaseConfigured,
+    config,
+    missingVars: config.missingClientVars,
+  };
+}
+
+/**
+ * Returns a singleton, typed browser Supabase client using createClient.
+ * Reads environment variables exclusively through import.meta.env (via getClientEnvConfig).
+ * Returns null cleanly if required environment variables are not configured.
+ */
+export function getSupabaseBrowserClient(): SupabaseClient<Database> | null {
+  const { isValid, config } = validateSupabaseConfig();
+  if (!isValid || !config.supabaseUrl || !config.supabasePublishableKey) {
     return null;
   }
 
   if (!cachedClient) {
-    cachedClient = createClient(config.supabaseUrl, config.supabasePublishableKey, {
+    cachedClient = createClient<Database>(config.supabaseUrl, config.supabasePublishableKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -27,6 +45,74 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
   return cachedClient;
 }
 
+/**
+ * Convenience helper returning true if Supabase is fully configured.
+ */
 export function isSupabaseClientReady(): boolean {
-  return getClientEnvConfig().isSupabaseConfigured;
+  return validateSupabaseConfig().isValid;
 }
+
+/**
+ * Performs a safe, non-destructive connection health check against the Supabase Auth endpoint.
+ * Does not require any application tables to exist.
+ */
+export async function testSupabaseConnection(): Promise<{
+  ok: boolean;
+  message: string;
+  latencyMs?: number;
+}> {
+  const client = getSupabaseBrowserClient();
+  if (!client) {
+    const { missingVars } = validateSupabaseConfig();
+    return {
+      ok: false,
+      message: `Supabase client is not configured. Missing variables in .env.local: ${missingVars.join(', ')}`,
+    };
+  }
+
+  const start = Date.now();
+  try {
+    // getSession reads local storage and contacts Auth endpoint if token needs refresh
+    const { error } = await client.auth.getSession();
+    const latencyMs = Date.now() - start;
+
+    if (error) {
+      return {
+        ok: false,
+        message: `Supabase connection error: ${error.message}`,
+        latencyMs,
+      };
+    }
+
+    return {
+      ok: true,
+      message: 'Supabase client initialized and connected successfully.',
+      latencyMs,
+    };
+  } catch (err) {
+    const latencyMs = Date.now() - start;
+    return {
+      ok: false,
+      message: err instanceof Error ? err.message : 'Unknown connection error',
+      latencyMs,
+    };
+  }
+}
+
+/**
+ * Singleton proxy export for convenient direct imports:
+ * import { supabase } from '@/lib/supabaseClient';
+ * Safe to import anywhere: warns if called before credentials are configured.
+ */
+export const supabase = new Proxy({} as SupabaseClient<Database>, {
+  get(_target, prop) {
+    const client = getSupabaseBrowserClient();
+    if (!client) {
+      console.warn(
+        `[Supabase] Attempted to access property '${String(prop)}' before Supabase credentials are configured in .env.`
+      );
+      return undefined;
+    }
+    return (client as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});

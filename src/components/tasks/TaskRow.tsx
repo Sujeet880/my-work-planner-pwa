@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calendar, Check, Pause, Play, Pencil } from 'lucide-react';
+import { Calendar, Check, Folder, MoreHorizontal, Pause, Play } from 'lucide-react';
 import {
   calculateLiveActualSeconds,
   formatDuration,
@@ -7,8 +7,7 @@ import {
   isTaskOverdue,
 } from '../../lib/timeMath';
 import type { ActiveTimerState, Project, Task, TimeEntry } from '../../types/models';
-import { PriorityBadge, ProjectLabel, StatusBadge } from '../ui/Badges';
-import { Button } from '../ui/Button';
+import { PriorityBadge, StatusBadge } from '../ui/Badges';
 
 export interface TaskRowProps {
   task: Task;
@@ -39,12 +38,12 @@ export function TaskRow({
   const isCompleted = task.status === 'completed';
   const overdue = isTaskOverdue(task, todayIso);
   const isThisTaskActive = activeTimer?.taskId === task.id;
-  const timerState = isThisTaskActive ? activeTimer?.status ?? null : null;
+  const isRunning = isThisTaskActive && activeTimer?.status === 'running';
 
   const liveActualSeconds = calculateLiveActualSeconds(timeEntries, activeTimer, task.id, nowMs);
   const plannedLabel = task.plannedDurationMinutes
     ? formatDuration(task.plannedDurationMinutes * 60)
-    : 'No est.';
+    : '—';
   const actualLabel = formatDuration(liveActualSeconds);
 
   const scheduleText = task.scheduledDate
@@ -59,24 +58,24 @@ export function TaskRow({
 
   return (
     <div
-      className={`group flex flex-col gap-3 rounded-xl border bg-white px-4 py-3.5 transition-colors sm:flex-row sm:items-center sm:justify-between ${
+      className={`group flex items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 transition-all ${
         isThisTaskActive
-          ? 'border-[#4968D6]/40 bg-[#EDF1FF]/30'
-          : 'border-[#E4E7EC] hover:border-[#D0D5DD]'
+          ? 'border-[#2F65F6]/40 bg-[#EDF2FE]/40 shadow-xs'
+          : 'border-[#E9ECF5] bg-white hover:border-[#D0D5DD] hover:bg-[#F9FAFD]/70'
       }`}
     >
       {/* Left: Checkbox + Title + Metadata */}
-      <div className="flex min-w-0 flex-1 items-start gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         <button
           type="button"
           role="checkbox"
           aria-checked={isCompleted}
           aria-label={isCompleted ? `Mark "${task.title}" incomplete` : `Complete "${task.title}"`}
           onClick={() => onToggleComplete(task.id)}
-          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors cursor-pointer ${
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-all cursor-pointer ${
             isCompleted
-              ? 'border-[#16845B] bg-[#16845B] text-white'
-              : 'border-[#D0D5DD] bg-white hover:border-[#4968D6]'
+              ? 'bg-[#2F65F6] text-white shadow-xs'
+              : 'border-2 border-[#D0D5DD] bg-white hover:border-[#2F65F6]'
           }`}
         >
           {isCompleted && <Check className="h-3.5 w-3.5 stroke-[2.5]" />}
@@ -85,80 +84,86 @@ export function TaskRow({
         <div className="min-w-0 flex-1">
           <Link
             to={`/tasks/${task.id}`}
-            className={`block truncate text-sm font-medium leading-snug hover:text-[#4968D6] ${
-              isCompleted ? 'text-[#98A2B3] line-through' : 'text-[#202531]'
+            className={`block truncate text-sm font-semibold transition-colors ${
+              isCompleted
+                ? 'text-[#98A2B3] line-through'
+                : isThisTaskActive
+                  ? 'text-[#2F65F6]'
+                  : 'text-[#1A1F2C] hover:text-[#2F65F6]'
             }`}
           >
             {task.title}
           </Link>
 
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-[#667085]">
+          <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-[#7E8B9B]">
             {project ? (
-              <ProjectLabel name={project.name} color={project.color} />
+              <span className="flex items-center gap-1">
+                <Folder className="h-3 w-3 shrink-0" />
+                <span className="truncate max-w-[130px]">{project.name}</span>
+              </span>
             ) : (
               <span className="text-[#98A2B3]">No project</span>
             )}
+
             <span className="inline-flex items-center gap-1 tabular-nums-strict">
-              <Calendar className="h-3.5 w-3.5 text-[#98A2B3]" aria-hidden="true" />
+              <Calendar className="h-3 w-3 text-[#98A2B3]" aria-hidden="true" />
               <span className={overdue ? 'font-medium text-[#C2414B]' : ''}>{scheduleText}</span>
             </span>
+
             <PriorityBadge priority={task.priority} />
-            {!compact && <StatusBadge status={task.status} isOverdue={overdue} timerState={timerState} />}
+            {!compact && <StatusBadge status={task.status} isOverdue={overdue} />}
           </div>
         </div>
       </div>
 
-      {/* Right: Planned vs Actual + Actions */}
-      <div className="flex items-center justify-between gap-3 border-t border-[#F0F2F5] pt-2.5 sm:border-t-0 sm:pt-0 sm:justify-end">
-        <div className="text-left sm:text-right">
-          <div className="text-xs font-medium text-[#202531] tabular-nums-strict">
-            <span className={isThisTaskActive ? 'text-[#4968D6]' : ''}>{actualLabel}</span>
-            <span className="mx-1 text-[#98A2B3]">/</span>
-            <span className="text-[#667085]">{plannedLabel}</span>
+      {/* Right: Duration + Play/Pause Action + More Menu */}
+      <div className="flex items-center gap-2.5 shrink-0">
+        <div className="text-right hidden sm:block">
+          <div className="text-xs font-semibold text-[#1A1F2C] tabular-nums-strict">
+            <span className={isThisTaskActive ? 'text-[#2F65F6]' : ''}>{actualLabel}</span>
+            {task.plannedDurationMinutes && (
+              <>
+                <span className="mx-1 text-[#98A2B3]">/</span>
+                <span className="text-[#7E8B9B]">{plannedLabel}</span>
+              </>
+            )}
           </div>
-          <div className="text-[11px] text-[#98A2B3]">Actual / Planned</div>
+          <div className="text-[10px] text-[#98A2B3]">
+            {task.plannedDurationMinutes ? 'Actual / Planned' : 'Actual time'}
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          {!isCompleted && (
-            <>
-              {isThisTaskActive && activeTimer?.status === 'running' ? (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={onPauseTimer}
-                  aria-label={`Pause timer for "${task.title}"`}
-                >
-                  <Pause className="h-3.5 w-3.5 text-[#4968D6]" />
-                  <span>Pause</span>
-                </Button>
-              ) : (
-                <Button
-                  variant={isThisTaskActive ? 'primary' : 'secondary'}
-                  size="sm"
-                  onClick={() => onStartTimer(task.id)}
-                  aria-label={
-                    isThisTaskActive
-                      ? `Resume timer for "${task.title}"`
-                      : `Start timer for "${task.title}"`
-                  }
-                >
-                  <Play className="h-3.5 w-3.5" />
-                  <span>{isThisTaskActive ? 'Resume' : 'Start'}</span>
-                </Button>
-              )}
-            </>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onEditTask(task)}
-            aria-label={`Edit "${task.title}"`}
-            className="px-2"
+        {!isCompleted && (
+          <button
+            type="button"
+            onClick={() => (isRunning ? onPauseTimer() : onStartTimer(task.id))}
+            aria-label={
+              isRunning
+                ? `Pause timer for "${task.title}"`
+                : `Start timer for "${task.title}"`
+            }
+            className={`flex h-8 w-8 items-center justify-center rounded-full transition-all cursor-pointer active:scale-95 ${
+              isThisTaskActive
+                ? 'bg-[#2F65F6] text-white shadow-sm'
+                : 'bg-[#EDF2FE] text-[#2F65F6] hover:bg-[#DDE7FD]'
+            }`}
           >
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+            {isRunning ? (
+              <Pause className="h-3.5 w-3.5 fill-current" />
+            ) : (
+              <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
+            )}
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => onEditTask(task)}
+          aria-label={`Edit "${task.title}"`}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-[#98A2B3] hover:bg-[#F0F2F5] hover:text-[#1A1F2C] transition-colors cursor-pointer"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );

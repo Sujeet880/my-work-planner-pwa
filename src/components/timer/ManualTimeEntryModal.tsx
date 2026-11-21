@@ -116,15 +116,17 @@ export function ManualTimeEntryModal() {
           </FieldWrapper>
 
           <div className="space-y-1.5">
-            <span className="block text-sm font-medium text-[#202531]">Entry Method</span>
-            <div className="grid grid-cols-2 gap-1 rounded-lg border border-[#E4E7EC] bg-[#F0F2F5] p-1">
+            <span className="block text-xs font-semibold uppercase tracking-wider text-[#7E8B9B]">
+              Entry Method
+            </span>
+            <div className="grid grid-cols-2 gap-1 rounded-xl border border-[#E9ECF5] bg-[#F4F7FD] p-1">
               <button
                 type="button"
                 onClick={() => setInputMode('duration')}
-                className={`h-8 rounded-md text-xs font-medium cursor-pointer ${
+                className={`h-8 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   inputMode === 'duration'
-                    ? 'bg-white text-[#202531] shadow-[0_1px_2px_rgba(16,24,40,0.08)]'
-                    : 'text-[#667085]'
+                    ? 'bg-white text-[#2F65F6] shadow-sm'
+                    : 'text-[#7E8B9B] hover:text-[#1A1F2C]'
                 }`}
               >
                 Duration
@@ -132,10 +134,10 @@ export function ManualTimeEntryModal() {
               <button
                 type="button"
                 onClick={() => setInputMode('range')}
-                className={`h-8 rounded-md text-xs font-medium cursor-pointer ${
+                className={`h-8 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   inputMode === 'range'
-                    ? 'bg-white text-[#202531] shadow-[0_1px_2px_rgba(16,24,40,0.08)]'
-                    : 'text-[#667085]'
+                    ? 'bg-white text-[#2F65F6] shadow-sm'
+                    : 'text-[#7E8B9B] hover:text-[#1A1F2C]'
                 }`}
               >
                 Start / End

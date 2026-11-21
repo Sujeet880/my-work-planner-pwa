@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { CalendarOff, Info } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { validateTaskInput, type ValidationErrors } from '../../lib/timeMath';
 import type { TaskFormValues, TaskPriority } from '../../types/models';
@@ -49,7 +47,6 @@ export function TaskFormDrawer() {
     taskDrawerDefaultDate,
     closeTaskDrawer,
     projects,
-    calendarConnection,
     saveTask,
   } = useWorkspace();
 
@@ -84,26 +81,6 @@ export function TaskFormDrawer() {
     closeTaskDrawer();
   };
 
-  const handleSaveAsInbox = () => {
-    const inboxValues: TaskFormValues = {
-      ...values,
-      scheduledDate: '',
-      scheduledStartTime: '',
-    };
-    const validationErrors = validateTaskInput({
-      title: inboxValues.title,
-      scheduledDate: '',
-      scheduledStartTime: '',
-      plannedDurationMinutes: inboxValues.plannedDurationMinutes,
-    });
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-    saveTask(inboxValues, editingTask?.id);
-    closeTaskDrawer();
-  };
-
   const priorities: { value: TaskPriority; label: string }[] = [
     { value: 'high', label: 'High' },
     { value: 'medium', label: 'Medium' },
@@ -117,28 +94,33 @@ export function TaskFormDrawer() {
       title={editingTask ? 'Edit Task' : 'Create New Task'}
       subtitle={
         editingTask
-          ? 'Update scheduling, priority, or planned duration.'
-          : 'Schedule a task for a specific day or leave unscheduled in Inbox.'
+          ? 'Update priority, duration estimate, or schedule date.'
+          : 'Schedule for a specific day or leave unscheduled to save in Inbox.'
       }
       footer={
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-3 w-full">
           <Button variant="ghost" onClick={closeTaskDrawer}>
             Cancel
           </Button>
-          <div className="flex flex-wrap items-center gap-2">
-            {!editingTask && (
-              <Button variant="secondary" onClick={handleSaveAsInbox}>
-                Save to Inbox
-              </Button>
-            )}
-            <Button variant="primary" type="submit" form="task-drawer-form">
-              {editingTask ? 'Save Changes' : 'Save Task'}
-            </Button>
-          </div>
+
+          <Button
+            variant="primary"
+            type="submit"
+            form="task-drawer-form"
+            className="px-6"
+          >
+            {editingTask ? 'Save Changes' : 'Create Task'}
+          </Button>
         </div>
       }
     >
-      <form id="task-drawer-form" onSubmit={handleSubmit} className="space-y-5" noValidate>
+      <form
+        id="task-drawer-form"
+        onSubmit={handleSubmit}
+        className="space-y-5"
+        noValidate
+      >
+        {/* Task Title */}
         <FieldWrapper
           id="task-title"
           label="Task Title"
@@ -153,22 +135,28 @@ export function TaskFormDrawer() {
               setValues((v) => ({ ...v, title: e.target.value }));
               if (errors.title) setErrors((prev) => ({ ...prev, title: '' }));
             }}
-            placeholder="e.g., Prepare client proposal draft"
+            placeholder="e.g., Prepare quarterly roadmap presentation"
             hasError={Boolean(errors.title)}
+            className="h-11 rounded-xl text-base"
             autoFocus
           />
         </FieldWrapper>
 
-        <FieldWrapper id="task-description" label="Description (Optional)">
+        {/* Description / Notes */}
+        <FieldWrapper id="task-description" label="Notes / Description">
           <Textarea
             id="task-description"
             name="description"
             value={values.description}
-            onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
-            placeholder="Add brief context, deliverables, or links..."
+            onChange={(e) =>
+              setValues((v) => ({ ...v, description: e.target.value }))
+            }
+            placeholder="Add deliverables, links, or context..."
+            className="rounded-xl min-h-[90px]"
           />
         </FieldWrapper>
 
+        {/* Project & Priority */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FieldWrapper id="task-project" label="Project / Client">
             <Select
@@ -177,6 +165,7 @@ export function TaskFormDrawer() {
               onChange={(e) =>
                 setValues((v) => ({ ...v, projectId: e.target.value || null }))
               }
+              className="h-10 rounded-xl"
             >
               <option value="">No Project</option>
               {activeProjects.map((project) => (
@@ -188,9 +177,11 @@ export function TaskFormDrawer() {
           </FieldWrapper>
 
           <div className="space-y-1.5">
-            <span className="block text-sm font-medium text-[#202531]">Priority</span>
+            <span className="block text-sm font-semibold text-[#1A1F2C]">
+              Priority
+            </span>
             <div
-              className="grid grid-cols-3 gap-1 rounded-lg border border-[#E4E7EC] bg-[#F0F2F5] p-1"
+              className="grid grid-cols-3 gap-1 rounded-xl border border-[#E9ECF5] bg-[#F8FAFD] p-1"
               role="radiogroup"
               aria-label="Priority"
             >
@@ -203,10 +194,10 @@ export function TaskFormDrawer() {
                     role="radio"
                     aria-checked={selected}
                     onClick={() => setValues((v) => ({ ...v, priority: p.value }))}
-                    className={`h-8 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                    className={`h-8 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       selected
-                        ? 'bg-white text-[#202531] shadow-[0_1px_2px_rgba(16,24,40,0.08)]'
-                        : 'text-[#667085] hover:text-[#202531]'
+                        ? 'bg-white text-[#1A1F2C] shadow-xs'
+                        : 'text-[#7E8B9B] hover:text-[#1A1F2C]'
                     }`}
                   >
                     {p.label}
@@ -217,11 +208,12 @@ export function TaskFormDrawer() {
           </div>
         </div>
 
+        {/* Scheduled Date & Start Time */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FieldWrapper
             id="task-date"
             label="Scheduled Date"
-            helperText="Leave blank to keep in Inbox."
+            helperText="Leave empty to save to Inbox."
           >
             <Input
               id="task-date"
@@ -229,41 +221,56 @@ export function TaskFormDrawer() {
               value={values.scheduledDate}
               onChange={(e) => {
                 const nextDate = e.target.value;
-                setValues((v) => ({ ...v, scheduledDate: nextDate }));
+                setValues((v) => ({
+                  ...v,
+                  scheduledDate: nextDate,
+                  scheduledStartTime: nextDate ? v.scheduledStartTime : '',
+                }));
                 if (nextDate && errors.scheduledStartTime) {
                   setErrors((prev) => ({ ...prev, scheduledStartTime: '' }));
                 }
               }}
+              className="h-10 rounded-xl"
             />
           </FieldWrapper>
 
           <FieldWrapper
             id="task-start-time"
-            label="Scheduled Start Time"
+            label="Start Time (Optional)"
             error={errors.scheduledStartTime}
-            helperText="Optional. Requires a scheduled date."
+            helperText={
+              values.scheduledDate
+                ? 'Optional start time'
+                : 'Requires a scheduled date'
+            }
           >
             <Input
               id="task-start-time"
               type="time"
+              disabled={!values.scheduledDate}
               value={values.scheduledStartTime}
               onChange={(e) => {
-                setValues((v) => ({ ...v, scheduledStartTime: e.target.value }));
+                setValues((v) => ({
+                  ...v,
+                  scheduledStartTime: e.target.value,
+                }));
                 if (errors.scheduledStartTime) {
                   setErrors((prev) => ({ ...prev, scheduledStartTime: '' }));
                 }
               }}
               hasError={Boolean(errors.scheduledStartTime)}
+              className="h-10 rounded-xl disabled:opacity-40"
             />
           </FieldWrapper>
         </div>
 
+        {/* Planned Duration & Reminder */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FieldWrapper
             id="task-planned-duration"
             label="Planned Duration (minutes)"
             error={errors.plannedDurationMinutes}
-            helperText="Used for Planned vs Actual reporting."
+            helperText="E.g., 45, 60, 90 min"
           >
             <Input
               id="task-planned-duration"
@@ -274,26 +281,33 @@ export function TaskFormDrawer() {
               placeholder="e.g., 60"
               value={values.plannedDurationMinutes}
               onChange={(e) => {
-                setValues((v) => ({ ...v, plannedDurationMinutes: e.target.value }));
+                setValues((v) => ({
+                  ...v,
+                  plannedDurationMinutes: e.target.value,
+                }));
                 if (errors.plannedDurationMinutes) {
-                  setErrors((prev) => ({ ...prev, plannedDurationMinutes: '' }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    plannedDurationMinutes: '',
+                  }));
                 }
               }}
               hasError={Boolean(errors.plannedDurationMinutes)}
+              className="h-10 rounded-xl"
             />
           </FieldWrapper>
 
-          <FieldWrapper
-            id="task-reminder"
-            label="Reminder (Optional)"
-            helperText="In-app & browser notice when active."
-          >
+          <FieldWrapper id="task-reminder" label="Reminder">
             <Select
               id="task-reminder"
               value={values.reminderOffsetMinutes}
               onChange={(e) =>
-                setValues((v) => ({ ...v, reminderOffsetMinutes: e.target.value }))
+                setValues((v) => ({
+                  ...v,
+                  reminderOffsetMinutes: e.target.value,
+                }))
               }
+              className="h-10 rounded-xl"
             >
               <option value="">No reminder</option>
               <option value="0">At start time</option>
@@ -304,43 +318,12 @@ export function TaskFormDrawer() {
           </FieldWrapper>
         </div>
 
-        {/* Google Calendar Sync Status — Honest Disconnected State in M0 */}
-        <div className="rounded-xl border border-[#E4E7EC] bg-[#F6F7F9] p-3.5">
-          <div className="flex items-start gap-2.5">
-            <CalendarOff className="mt-0.5 h-4 w-4 shrink-0 text-[#667085]" />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-[#202531]">
-                  Google Calendar (One-Way Sync)
-                </span>
-                <span className="rounded-md bg-white px-2 py-0.5 text-[11px] font-medium text-[#667085] border border-[#E4E7EC]">
-                  {calendarConnection.isConnected ? 'Connected' : 'Not Connected'}
-                </span>
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-[#667085]">
-                {!values.scheduledDate
-                  ? 'Inbox tasks are unscheduled and do not sync to Google Calendar until a date is assigned.'
-                  : 'Connect Google Calendar in Settings (Milestone 6) to push scheduled tasks one-way from My Work Planner to Google Calendar.'}
-              </p>
-              <Link
-                to="/settings/google-calendar"
-                onClick={closeTaskDrawer}
-                className="mt-1.5 inline-block text-xs font-medium text-[#4968D6] hover:underline"
-              >
-                View Calendar Integration Settings
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Single Active Timer Info */}
-        <div className="flex items-start gap-2.5 rounded-xl border border-[#E4E7EC] bg-white p-3.5">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#3574B8]" />
-          <p className="text-xs leading-relaxed text-[#667085]">
-            Only one task timer can run at a time. Starting a timer on a new task will prompt you
-            to save and switch from any active session.
+        {/* Contextual notice */}
+        {!values.scheduledDate && (
+          <p className="text-xs text-[#7E8B9B] bg-[#F8FAFD] border border-[#E9ECF5] rounded-xl p-3">
+            💡 This task is unscheduled and will be saved to your <strong>Inbox</strong>. You can schedule it anytime.
           </p>
-        </div>
+        )}
       </form>
     </Drawer>
   );

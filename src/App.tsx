@@ -2,7 +2,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
 import { AppShell } from './components/layout/AppShell';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { SignInPage } from './features/auth/SignInPage';
+import { AuthCallbackPage } from './features/auth/AuthCallbackPage';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { MyTasksPage } from './features/tasks/MyTasksPage';
 import { TaskDetailsPage } from './features/tasks/TaskDetailsPage';
@@ -25,6 +27,7 @@ function WorkspaceRoutes() {
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/google-calendar" element={<GoogleCalendarPage />} />
+        <Route path="/calendar" element={<Navigate to="/settings/google-calendar" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AppShell>
@@ -38,7 +41,15 @@ export default function App() {
         <WorkspaceProvider>
           <Routes>
             <Route path="/sign-in" element={<SignInPage />} />
-            <Route path="/*" element={<WorkspaceRoutes />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <WorkspaceRoutes />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </WorkspaceProvider>
       </AuthProvider>

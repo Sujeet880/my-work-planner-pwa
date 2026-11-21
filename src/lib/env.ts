@@ -17,10 +17,25 @@ function readEnvValue(value: unknown): string | null {
  * Never expects or reads server secrets (SUPABASE_SECRET_KEY, GOOGLE_CLIENT_SECRET).
  */
 export function getClientEnvConfig(): ClientEnvConfig {
-  const supabaseUrl = readEnvValue(import.meta.env.VITE_SUPABASE_URL);
-  const supabasePublishableKey = readEnvValue(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+  const supabaseUrl = readEnvValue(
+    (typeof import.meta !== 'undefined' && import.meta.env
+      ? import.meta.env.VITE_SUPABASE_URL
+      : undefined) ??
+      (typeof process !== 'undefined' ? process.env?.VITE_SUPABASE_URL : undefined)
+  );
+  const supabasePublishableKey = readEnvValue(
+    (typeof import.meta !== 'undefined' && import.meta.env
+      ? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+      : undefined) ??
+      (typeof process !== 'undefined' ? process.env?.VITE_SUPABASE_PUBLISHABLE_KEY : undefined)
+  );
   const appBaseUrl =
-    readEnvValue(import.meta.env.VITE_APP_BASE_URL) ??
+    readEnvValue(
+      (typeof import.meta !== 'undefined' && import.meta.env
+        ? import.meta.env.VITE_APP_BASE_URL
+        : undefined) ??
+        (typeof process !== 'undefined' ? process.env?.VITE_APP_BASE_URL : undefined)
+    ) ??
     (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
 
   const missingClientVars: string[] = [];

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Archive, FolderKanban, Pencil, Plus, RotateCcw } from 'lucide-react';
+import { Archive, Bell, FolderKanban, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { calculateSavedWorkSeconds, formatDuration } from '../../lib/timeMath';
 import type { Project } from '../../types/models';
@@ -9,23 +9,24 @@ import { FieldWrapper, Input, Textarea } from '../../components/ui/Field';
 import { Modal } from '../../components/ui/Modal';
 
 const COLOR_OPTIONS = [
-  { hex: '#4968D6', label: 'Slate Blue' },
+  { hex: '#2F65F6', label: 'Electric Blue' },
   { hex: '#16845B', label: 'Forest Green' },
-  { hex: '#B7791F', label: 'Warm Amber' },
-  { hex: '#3574B8', label: 'Calm Sky' },
-  { hex: '#C2414B', label: 'Muted Crimson' },
-  { hex: '#667085', label: 'Neutral Slate' },
+  { hex: '#E67E22', label: 'Warm Amber' },
+  { hex: '#3B82F6', label: 'Sky Blue' },
+  { hex: '#8B5CF6', label: 'Violet Purple' },
+  { hex: '#EC4899', label: 'Rose Pink' },
+  { hex: '#7E8B9B', label: 'Neutral Slate' },
 ];
 
 export function ProjectsPage() {
-  const { projects, tasks, timeEntries, saveProject, toggleArchiveProject } = useWorkspace();
+  const { projects, tasks, timeEntries, saveProject, toggleArchiveProject, deleteProject } = useWorkspace();
 
   const [showArchived, setShowArchived] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [color, setColor] = useState('#4968D6');
+  const [color, setColor] = useState('#2F65F6');
   const [nameError, setNameError] = useState<string | null>(null);
 
   const visibleProjects = projects.filter((p) => (showArchived ? p.isArchived : !p.isArchived));
@@ -34,7 +35,7 @@ export function ProjectsPage() {
     setEditingProject(null);
     setName('');
     setDescription('');
-    setColor('#4968D6');
+    setColor('#2F65F6');
     setNameError(null);
     setModalOpen(true);
   };
@@ -64,40 +65,68 @@ export function ProjectsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#667085]">
-            Organize / Projects &amp; Clients
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#202531]">
+          <h1 className="text-3xl font-bold tracking-tight text-[#1A1F2C] sm:text-4xl">
             Projects &amp; Clients
           </h1>
-          <p className="mt-1 text-sm text-[#667085]">
-            Group tasks and track planned versus saved actual hours across clients and personal areas.
+          <p className="mt-1 text-sm font-medium text-[#7E8B9B]">
+            Organize tasks and track planned versus saved actual hours across client initiatives.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={() => setShowArchived((v) => !v)}
+        <div className="flex items-center gap-3">
+          <div className="inline-flex rounded-full border border-[#E9ECF5] bg-white/80 p-1 backdrop-blur-md shadow-sm">
+            <button
+              type="button"
+              onClick={() => setShowArchived(false)}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                !showArchived
+                  ? 'bg-[#EDF2FE] text-[#2F65F6]'
+                  : 'text-[#7E8B9B] hover:text-[#1A1F2C]'
+              }`}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowArchived(true)}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                showArchived
+                  ? 'bg-[#EDF2FE] text-[#2F65F6]'
+                  : 'text-[#7E8B9B] hover:text-[#1A1F2C]'
+              }`}
+            >
+              Archived
+            </button>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Notifications"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#E9ECF5] bg-white text-[#1A1F2C] shadow-sm hover:bg-[#F8FAFD] transition-colors cursor-pointer"
           >
-            {showArchived ? 'Show Active' : 'Show Archived'}
-          </Button>
-          <Button variant="primary" size="md" onClick={openNewProject}>
-            <Plus className="h-4 w-4" />
+            <Bell className="h-4 w-4" />
+            <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-[#2F65F6] ring-2 ring-white" />
+          </button>
+
+          <button
+            type="button"
+            onClick={openNewProject}
+            className="flex items-center gap-2 rounded-full bg-[#2F65F6] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(47,101,246,0.35)] transition-all hover:bg-[#2554DB] hover:shadow-[0_6px_20px_rgba(47,101,246,0.45)] cursor-pointer active:scale-95"
+          >
+            <Plus className="h-4 w-4 stroke-[2.5]" />
             <span>New Project</span>
-          </Button>
+          </button>
         </div>
       </div>
 
       {/* Project Grid */}
       {visibleProjects.length === 0 ? (
         <EmptyState
-          icon={<FolderKanban className="h-5 w-5" />}
+          icon={<FolderKanban className="h-6 w-6 text-[#2F65F6]" />}
           title={showArchived ? 'No archived projects' : 'No active projects yet'}
           description={
             showArchived
@@ -106,7 +135,7 @@ export function ProjectsPage() {
           }
           action={
             !showArchived && (
-              <Button variant="primary" size="sm" onClick={openNewProject}>
+              <Button variant="primary" size="md" onClick={openNewProject}>
                 <Plus className="h-4 w-4" />
                 <span>Create Project</span>
               </Button>
@@ -114,7 +143,7 @@ export function ProjectsPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {visibleProjects.map((project) => {
             const projectTasks = tasks.filter((t) => !t.isArchived && t.projectId === project.id);
             const activeTaskCount = projectTasks.filter((t) => t.status !== 'completed').length;
@@ -130,72 +159,88 @@ export function ProjectsPage() {
             return (
               <article
                 key={project.id}
-                className="flex flex-col justify-between rounded-xl border border-[#E4E7EC] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+                className="flex flex-col justify-between rounded-[24px] border border-[#E9ECF5] bg-white p-6 shadow-[0_8px_25px_rgba(25,45,100,0.03)] hover:shadow-[0_12px_30px_rgba(25,45,100,0.06)] transition-all"
               >
                 <div>
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0">
                       <span
-                        className="h-3 w-3 shrink-0 rounded-full"
+                        className="h-3.5 w-3.5 shrink-0 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.12)]"
                         style={{ backgroundColor: project.color }}
                         aria-hidden="true"
                       />
-                      <h2 className="truncate text-base font-semibold text-[#202531]">
+                      <h2 className="truncate text-lg font-semibold text-[#1A1F2C]">
                         {project.name}
                       </h2>
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
+                        type="button"
                         aria-label={`Edit ${project.name}`}
                         onClick={() => openEditProject(project)}
-                        className="px-2"
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[#7E8B9B] hover:bg-[#F4F7FD] hover:text-[#1A1F2C] transition-colors"
                       >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
                         aria-label={
                           project.isArchived
                             ? `Restore ${project.name}`
                             : `Archive ${project.name}`
                         }
                         onClick={() => toggleArchiveProject(project.id)}
-                        className="px-2"
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[#7E8B9B] hover:bg-[#F4F7FD] hover:text-[#1A1F2C] transition-colors"
                       >
                         {project.isArchived ? (
-                          <RotateCcw className="h-3.5 w-3.5" />
+                          <RotateCcw className="h-4 w-4" />
                         ) : (
-                          <Archive className="h-3.5 w-3.5" />
+                          <Archive className="h-4 w-4" />
                         )}
-                      </Button>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Delete ${project.name}`}
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Delete project "${project.name}"? Any associated tasks will be kept and unassigned.`
+                            )
+                          ) {
+                            deleteProject(project.id);
+                          }
+                        }}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[#7E8B9B] hover:bg-[#FCE8E9] hover:text-[#C2414B] transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
 
                   {project.description && (
-                    <p className="mt-2 text-sm text-[#667085]">{project.description}</p>
+                    <p className="mt-2.5 text-sm text-[#7E8B9B] leading-relaxed line-clamp-2">
+                      {project.description}
+                    </p>
                   )}
                 </div>
 
-                <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-[#F0F2F5] pt-4 text-xs">
+                <dl className="mt-6 grid grid-cols-3 gap-3 border-t border-[#F0F2F5] pt-4 text-xs">
                   <div>
-                    <dt className="text-[#667085]">Tasks</dt>
-                    <dd className="mt-1 font-semibold text-[#202531] tabular-nums-strict">
+                    <dt className="font-medium text-[#7E8B9B]">Tasks</dt>
+                    <dd className="mt-1 font-semibold text-[#1A1F2C] tabular-nums-strict">
                       {activeTaskCount} open · {completedCount} done
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-[#667085]">Planned</dt>
-                    <dd className="mt-1 font-semibold text-[#202531] tabular-nums-strict">
+                    <dt className="font-medium text-[#7E8B9B]">Planned</dt>
+                    <dd className="mt-1 font-semibold text-[#1A1F2C] tabular-nums-strict">
                       {formatDuration(plannedSeconds)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-[#667085]">Saved Actual</dt>
-                    <dd className="mt-1 font-semibold text-[#4968D6] tabular-nums-strict">
+                    <dt className="font-medium text-[#7E8B9B]">Saved Actual</dt>
+                    <dd className="mt-1 font-semibold text-[#2F65F6] tabular-nums-strict">
                       {formatDuration(savedActualSeconds)}
                     </dd>
                   </div>
@@ -252,9 +297,11 @@ export function ProjectsPage() {
             />
           </FieldWrapper>
 
-          <div className="space-y-1.5">
-            <span className="block text-sm font-medium text-[#202531]">Accent Color</span>
-            <div className="flex flex-wrap gap-2">
+          <div className="space-y-2">
+            <span className="block text-xs font-semibold uppercase tracking-wider text-[#7E8B9B]">
+              Accent Color
+            </span>
+            <div className="flex flex-wrap gap-2.5">
               {COLOR_OPTIONS.map((opt) => (
                 <button
                   key={opt.hex}
@@ -262,10 +309,10 @@ export function ProjectsPage() {
                   aria-label={opt.label}
                   aria-pressed={color === opt.hex}
                   onClick={() => setColor(opt.hex)}
-                  className={`flex h-9 w-9 items-center justify-center rounded-lg border cursor-pointer ${
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-all cursor-pointer ${
                     color === opt.hex
-                      ? 'border-[#202531] ring-2 ring-[#7895F2]/40'
-                      : 'border-[#E4E7EC]'
+                      ? 'border-[#2F65F6] ring-4 ring-[#2F65F6]/20 scale-105'
+                      : 'border-[#E9ECF5] hover:scale-105'
                   }`}
                 >
                   <span

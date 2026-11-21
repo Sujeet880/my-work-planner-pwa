@@ -11,22 +11,22 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-[#4968D6] text-white border border-[#4968D6] hover:bg-[#3D59BE] hover:border-[#3D59BE] disabled:opacity-50',
+    'bg-[#2F65F6] text-white border border-[#2F65F6] hover:bg-[#2554DB] hover:border-[#2554DB] shadow-[0_2px_8px_rgba(47,101,246,0.25)] hover:shadow-[0_4px_14px_rgba(47,101,246,0.35)] disabled:opacity-50 active:scale-95',
   secondary:
-    'bg-white text-[#202531] border border-[#E4E7EC] hover:bg-[#F6F7F9] hover:border-[#D0D5DD] disabled:opacity-50',
+    'bg-white text-[#1A1F2C] border border-[#E9ECF5] hover:bg-[#F8FAFD] hover:border-[#D0D5DD] shadow-[0_1px_2px_rgba(16,24,40,0.04)] disabled:opacity-50 active:scale-95',
   ghost:
-    'bg-transparent text-[#667085] border border-transparent hover:bg-[#F0F2F5] hover:text-[#202531] disabled:opacity-50',
+    'bg-transparent text-[#6E7687] border border-transparent hover:bg-white/80 hover:text-[#1A1F2C] disabled:opacity-50 active:scale-95',
   destructive:
-    'bg-[#FCE8E9] text-[#C2414B] border border-[#F5C2C7] hover:bg-[#F8D7DA] disabled:opacity-50',
+    'bg-[#FCE8E9] text-[#C2414B] border border-[#F5C2C7] hover:bg-[#F8D7DA] disabled:opacity-50 active:scale-95',
   success:
-    'bg-[#E8F5EF] text-[#16845B] border border-[#BCE3D1] hover:bg-[#D6EFE3] disabled:opacity-50',
+    'bg-[#E8F5EF] text-[#16845B] border border-[#BCE3D1] hover:bg-[#D6EFE3] disabled:opacity-50 active:scale-95',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-9 px-3 text-xs font-medium rounded-lg gap-1.5',
-  md: 'h-10 px-4 text-sm font-medium rounded-lg gap-2',
-  lg: 'h-11 px-5 text-sm font-medium rounded-lg gap-2',
-  icon: 'h-10 w-10 p-0 rounded-lg justify-center',
+  sm: 'h-8 px-3 text-xs font-semibold rounded-full gap-1.5',
+  md: 'h-10 px-4 text-sm font-semibold rounded-full gap-2',
+  lg: 'h-11 px-5 text-sm font-semibold rounded-full gap-2',
+  icon: 'h-9 w-9 p-0 rounded-full justify-center',
 };
 
 export function Button({
@@ -43,7 +43,7 @@ export function Button({
     <button
       type={type}
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-colors cursor-pointer disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-all duration-150 cursor-pointer disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       {...props}
     >
       {loading && (

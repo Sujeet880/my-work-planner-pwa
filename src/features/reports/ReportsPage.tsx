@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BarChart3,
+  Bell,
   CheckCircle2,
   Clock,
   Download,
@@ -127,29 +128,43 @@ export function ReportsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-7">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#667085]">
-            Workspace / Analytics &amp; Exports
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#202531]">Reports</h1>
-          <p className="mt-1 text-sm text-[#667085]">
-            Compare saved tracked work time against planned task durations across projects and dates.
+          <h1 className="text-3xl font-bold tracking-tight text-[#1A1F2C] sm:text-4xl">
+            Reports &amp; Analytics
+          </h1>
+          <p className="mt-1 text-sm font-medium text-[#7E8B9B]">
+            Compare planned vs. actual tracked hours across projects with precision analytics.
           </p>
         </div>
 
-        <Button variant="primary" size="md" onClick={() => setExportModalOpen(true)}>
-          <Download className="h-4 w-4" />
-          <span>Export Report</span>
-        </Button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            aria-label="Notifications"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#E9ECF5] bg-white text-[#1A1F2C] shadow-sm hover:bg-[#F8FAFD] transition-colors cursor-pointer"
+          >
+            <Bell className="h-4 w-4" />
+            <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-[#2F65F6] ring-2 ring-white" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setExportModalOpen(true)}
+            className="flex items-center gap-2 rounded-full bg-[#2F65F6] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(47,101,246,0.35)] transition-all hover:bg-[#2554DB] hover:shadow-[0_6px_20px_rgba(47,101,246,0.45)] cursor-pointer active:scale-95"
+          >
+            <Download className="h-4 w-4" />
+            <span>Export Report</span>
+          </button>
+        </div>
       </div>
 
-      {/* Period Selector & Project Filter */}
-      <div className="flex flex-col gap-3 rounded-xl border border-[#E4E7EC] bg-white p-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      {/* Period Selector & Project Filter Controls */}
+      <div className="flex flex-col gap-3 rounded-[28px] border border-white/80 bg-white/80 p-3.5 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div
-          className="inline-flex flex-wrap rounded-lg border border-[#E4E7EC] bg-[#F6F7F9] p-1"
+          className="inline-flex flex-wrap rounded-full border border-[#E9ECF5] bg-[#F4F7FD] p-1"
           role="tablist"
           aria-label="Report time period"
         >
@@ -160,10 +175,10 @@ export function ReportsPage() {
               role="tab"
               aria-selected={period === p.key}
               onClick={() => setPeriod(p.key)}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 period === p.key
-                  ? 'bg-white text-[#4968D6] shadow-[0_1px_2px_rgba(16,24,40,0.06)]'
-                  : 'text-[#667085] hover:text-[#202531]'
+                  ? 'bg-white text-[#2F65F6] shadow-xs'
+                  : 'text-[#7E8B9B] hover:text-[#1A1F2C]'
               }`}
             >
               {p.label}
@@ -179,15 +194,15 @@ export function ReportsPage() {
                 aria-label="Custom start date"
                 value={customStart}
                 onChange={(e) => setCustomStart(e.target.value)}
-                className="h-9 w-auto text-xs"
+                className="h-9 w-auto text-xs rounded-xl"
               />
-              <span className="text-xs text-[#667085]">to</span>
+              <span className="text-xs text-[#7E8B9B] font-medium">to</span>
               <Input
                 type="date"
                 aria-label="Custom end date"
                 value={customEnd}
                 onChange={(e) => setCustomEnd(e.target.value)}
-                className="h-9 w-auto text-xs"
+                className="h-9 w-auto text-xs rounded-xl"
               />
             </div>
           )}
@@ -196,7 +211,7 @@ export function ReportsPage() {
             aria-label="Filter report by project"
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}
-            className="h-9 w-auto min-w-[150px] text-xs"
+            className="h-9.5 w-auto min-w-[150px] text-xs font-semibold rounded-xl"
           >
             <option value="all">All Projects</option>
             {projects
@@ -212,12 +227,12 @@ export function ReportsPage() {
 
       {/* Separate Notice for Active Unsaved Session (PRD §14.3) */}
       {activeTimer && activeTask && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-[#4968D6]/30 bg-[#EDF1FF]/60 px-4 py-3 text-xs text-[#202531]">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#4968D6]" />
+        <div className="flex items-start gap-3 rounded-2xl border border-[#2F65F6]/20 bg-[#EDF2FE]/70 px-4 py-3 text-xs text-[#1A1F2C]">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#2F65F6]" />
           <div className="tabular-nums-strict">
             <strong className="font-semibold">Active session excluded from saved totals:</strong>{' '}
             &ldquo;{activeTask.title}&rdquo; currently has{' '}
-            <strong className="font-semibold text-[#4968D6]">
+            <strong className="font-semibold text-[#2F65F6]">
               {formatDuration(activeElapsedSeconds, true)}
             </strong>{' '}
             in progress. Stop and save the timer to include it in finalized report totals.
@@ -225,8 +240,8 @@ export function ReportsPage() {
         </div>
       )}
 
-      {/* 4 PRD-Compliant Core Report KPIs */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+      {/* 4 Core Report KPIs */}
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <MetricCard
           label="Saved Tracked Time"
           value={formatDuration(totalSavedSeconds)}
@@ -255,61 +270,61 @@ export function ReportsPage() {
       </div>
 
       {/* Planned vs Actual by Project (Restrained Data Visualization) */}
-      <section className="rounded-xl border border-[#E4E7EC] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      <section className="rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base font-semibold text-[#202531]">
+            <h2 className="text-base font-bold text-[#1A1F2C]">
               Planned vs. Saved Actual by Project
             </h2>
-            <p className="text-xs text-[#667085]">
+            <p className="text-xs text-[#7E8B9B]">
               Shows only saved completed entries within {dateRange.start} – {dateRange.end}.
             </p>
           </div>
-          <div className="flex items-center gap-4 text-xs text-[#667085]">
+          <div className="flex items-center gap-4 text-xs font-semibold text-[#7E8B9B]">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-sm bg-[#D0D5DD]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#E2E8F0]" />
               Planned
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-sm bg-[#4968D6]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#2F65F6]" />
               Saved Actual
             </span>
           </div>
         </div>
 
         {projectSummary.rows.length > 0 ? (
-          <div className="mt-5 space-y-4">
+          <div className="mt-6 space-y-5">
             {projectSummary.rows.map(({ project, taskCount, plannedSec, actualSec }) => {
               const plannedWidth = Math.round((plannedSec / projectSummary.maxSec) * 100);
               const actualWidth = Math.round((actualSec / projectSummary.maxSec) * 100);
               return (
-                <div key={project.id} className="space-y-1.5">
+                <div key={project.id} className="space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-2">
                       <ProjectLabel name={project.name} color={project.color} />
-                      <span className="text-[#98A2B3] tabular-nums-strict">
+                      <span className="text-[#9AA6B8] tabular-nums-strict font-semibold">
                         ({taskCount} task{taskCount === 1 ? '' : 's'})
                       </span>
                     </div>
                     <div className="flex items-center gap-3 tabular-nums-strict">
-                      <span className="text-[#667085]">
-                        Planned: <strong className="text-[#202531]">{formatDuration(plannedSec)}</strong>
+                      <span className="text-[#7E8B9B]">
+                        Planned: <strong className="text-[#1A1F2C] font-semibold">{formatDuration(plannedSec)}</strong>
                       </span>
-                      <span className="text-[#667085]">
-                        Actual: <strong className="text-[#4968D6]">{formatDuration(actualSec)}</strong>
+                      <span className="text-[#7E8B9B]">
+                        Actual: <strong className="text-[#2F65F6] font-semibold">{formatDuration(actualSec)}</strong>
                       </span>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-[#F0F2F5]">
+                  <div className="space-y-1.5">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-[#F4F7FD]">
                       <div
-                        className="h-full rounded-full bg-[#D0D5DD]"
+                        className="h-full rounded-full bg-[#E2E8F0] transition-all duration-300"
                         style={{ width: `${plannedWidth}%` }}
                       />
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-[#F0F2F5]">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-[#F4F7FD]">
                       <div
-                        className="h-full rounded-full bg-[#4968D6]"
+                        className="h-full rounded-full bg-[#2F65F6] transition-all duration-300 shadow-[0_0_8px_rgba(47,101,246,0.25)]"
                         style={{ width: `${actualWidth}%` }}
                       />
                     </div>
@@ -319,17 +334,17 @@ export function ReportsPage() {
             })}
           </div>
         ) : (
-          <p className="mt-4 text-sm text-[#667085]">
+          <p className="mt-5 text-sm text-[#7E8B9B]">
             No planned or saved work hours recorded for the selected period.
           </p>
         )}
       </section>
 
       {/* Task Planned vs Actual Breakdown Table */}
-      <section className="overflow-hidden rounded-xl border border-[#E4E7EC] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-        <div className="border-b border-[#E4E7EC] px-5 py-4">
-          <h2 className="text-base font-semibold text-[#202531]">Task Planned vs. Actual</h2>
-          <p className="text-xs text-[#667085]">
+      <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl">
+        <div className="border-b border-[#F0F3F9] px-6 py-4">
+          <h2 className="text-base font-bold text-[#1A1F2C]">Task Planned vs. Actual</h2>
+          <p className="mt-0.5 text-xs text-[#7E8B9B]">
             Tasks without a planned estimate display &ldquo;No estimate&rdquo; rather than a fabricated
             variance.
           </p>
@@ -338,13 +353,13 @@ export function ReportsPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
-              <tr className="border-b border-[#E4E7EC] bg-[#F6F7F9] text-xs font-medium uppercase tracking-wider text-[#667085]">
-                <th className="px-5 py-3">Task</th>
-                <th className="px-4 py-3">Project</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Planned</th>
-                <th className="px-4 py-3 text-right">Saved Actual</th>
-                <th className="px-5 py-3 text-right">Variance</th>
+              <tr className="border-b border-[#E9ECF5] bg-[#F8FAFD] text-xs font-semibold uppercase tracking-wider text-[#7E8B9B]">
+                <th className="px-6 py-3.5">Task</th>
+                <th className="px-4 py-3.5">Project</th>
+                <th className="px-4 py-3.5">Status</th>
+                <th className="px-4 py-3.5 text-right">Planned</th>
+                <th className="px-4 py-3.5 text-right">Saved Actual</th>
+                <th className="px-6 py-3.5 text-right">Variance</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F0F2F5]">
@@ -356,47 +371,49 @@ export function ReportsPage() {
                 const variance = calculateTimeVariance(task.plannedDurationMinutes, taskSaved);
 
                 return (
-                  <tr key={task.id} className="hover:bg-[#F6F7F9]/60">
-                    <td className="px-5 py-3 font-medium text-[#202531]">
-                      <Link to={`/tasks/${task.id}`} className="hover:text-[#4968D6]">
+                  <tr key={task.id} className="hover:bg-[#F8FAFD]/70 transition-colors">
+                    <td className="px-6 py-3.5 font-medium text-[#1A1F2C]">
+                      <Link to={`/tasks/${task.id}`} className="hover:text-[#2F65F6] transition-colors">
                         {task.title}
                       </Link>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       {project ? (
                         <ProjectLabel name={project.name} color={project.color} />
                       ) : (
-                        <span className="text-xs text-[#98A2B3]">No project</span>
+                        <span className="text-xs text-[#9AA6B8]">No project</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <StatusBadge status={task.status} />
                     </td>
-                    <td className="px-4 py-3 text-right text-xs font-medium text-[#667085] tabular-nums-strict">
+                    <td className="px-4 py-3.5 text-right text-xs font-medium text-[#7E8B9B] tabular-nums-strict">
                       {task.plannedDurationMinutes
                         ? formatDuration(task.plannedDurationMinutes * 60)
                         : 'No estimate'}
                     </td>
-                    <td className="px-4 py-3 text-right text-xs font-semibold text-[#202531] tabular-nums-strict">
+                    <td className="px-4 py-3.5 text-right text-xs font-semibold text-[#1A1F2C] tabular-nums-strict">
                       {formatDuration(taskSaved)}
                     </td>
-                    <td
-                      className={`px-5 py-3 text-right text-xs font-medium tabular-nums-strict ${
-                        variance.status === 'over_plan'
-                          ? 'text-[#C2414B]'
-                          : variance.status === 'under_plan' || variance.status === 'on_target'
-                            ? 'text-[#16845B]'
-                            : 'text-[#667085]'
-                      }`}
-                    >
-                      {variance.label}
+                    <td className="px-6 py-3.5 text-right tabular-nums-strict">
+                      <span
+                        className={`inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                          variance.status === 'over_plan'
+                            ? 'bg-[#FEECEE] text-[#E03137]'
+                            : variance.status === 'under_plan' || variance.status === 'on_target'
+                              ? 'bg-[#E8F5EF] text-[#16845B]'
+                              : 'text-[#7E8B9B]'
+                        }`}
+                      >
+                        {variance.label}
+                      </span>
                     </td>
                   </tr>
                 );
               })}
               {scopedTasks.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-[#667085]">
+                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-[#7E8B9B]">
                     No tasks found for this period and filter combination.
                   </td>
                 </tr>
@@ -418,12 +435,12 @@ export function ReportsPage() {
           </Button>
         }
       >
-        <div className="space-y-3 text-sm">
-          <div className="flex items-start gap-3 rounded-lg border border-[#E4E7EC] bg-[#F6F7F9] p-3.5">
+        <div className="space-y-4 text-sm">
+          <div className="flex items-start gap-3 rounded-2xl border border-[#E9ECF5] bg-[#F8FAFD] p-4">
             <FileSpreadsheet className="mt-0.5 h-5 w-5 shrink-0 text-[#16845B]" />
             <div>
-              <div className="font-medium text-[#202531]">Planned Export Formats (Milestone 5)</div>
-              <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-[#667085]">
+              <div className="font-semibold text-[#1A1F2C]">Planned Export Formats (Milestone 5)</div>
+              <ul className="mt-1.5 list-disc space-y-1 pl-4 text-xs text-[#7E8B9B]">
                 <li>Excel Workbook (.xlsx): Summary, Tasks, Time Entries, and Project Breakdown sheets</li>
                 <li>CSV (.csv): UTF-8 flat export for spreadsheet or accounting imports</li>
                 <li>Active date range: {dateRange.start} to {dateRange.end}</li>
@@ -431,7 +448,7 @@ export function ReportsPage() {
             </div>
           </div>
           <FieldWrapper id="export-note" label="Milestone 0 Status">
-            <p className="text-xs text-[#667085]">
+            <p className="text-xs text-[#7E8B9B] leading-relaxed">
               Export file generation is not yet active in Milestone 0. It will be implemented on top
               of verified Supabase records in Milestone 5.
             </p>
