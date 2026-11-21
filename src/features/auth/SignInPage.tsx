@@ -179,19 +179,13 @@ export function SignInPage() {
                     <span>Supabase Configuration Notice</span>
                   </div>
                   <p className="mt-1.5 text-xs leading-relaxed text-[#7E8B9B]">
-                    Supabase credentials are not configured in your local environment yet. Add{' '}
+                    Supabase credentials are not configured in this environment yet. Configure{' '}
                     <code className="text-[#2F65F6] font-semibold">VITE_SUPABASE_URL</code> and{' '}
                     <code className="text-[#2F65F6] font-semibold">VITE_SUPABASE_PUBLISHABLE_KEY</code>{' '}
-                    to <code className="text-[#1A1F2C]">.env</code> to activate real Supabase Magic Link
+                    in your hosting platform settings (e.g., Vercel Project Settings) or local{' '}
+                    <code className="text-[#1A1F2C]">.env</code> to activate real Supabase Magic Link
                     authentication.
                   </p>
-                  <Link
-                    to="/dashboard"
-                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#2F65F6] hover:underline"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    <span>Return to Milestone 0 Shell Preview</span>
-                  </Link>
                 </div>
               )}
             </>

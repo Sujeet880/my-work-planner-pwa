@@ -22,11 +22,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 2. When Supabase is configured and user is NOT authenticated -> redirect to sign-in
-  if (isSupabaseConfigured && !isAuthenticated) {
+  // 2. When user is NOT authenticated -> redirect to sign-in
+  if (!isAuthenticated) {
     return <Navigate to="/sign-in" state={{ from: location }} replace />;
   }
 
-  // 3. Authenticated (or Milestone 0 preview when Supabase is not yet configured) -> allow access
+  // 3. Authenticated -> allow access
   return <>{children}</>;
 }

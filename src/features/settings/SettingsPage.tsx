@@ -185,7 +185,7 @@ export function SettingsPage() {
                   ? `Authenticated (${userEmail})`
                   : isSupabaseConfigured
                     ? 'Unauthenticated'
-                    : 'Milestone 0 Local Shell Preview'}
+                    : 'Supabase Not Configured'}
               </span>
             </div>
           </div>

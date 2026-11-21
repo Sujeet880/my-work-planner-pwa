@@ -48,8 +48,9 @@ function getFormattedTodayHeader(): string {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { isMilestone0Preview } = useAuth();
+  const { user, profile: authProfile } = useAuth();
   const {
+    profile,
     tasks,
     activeTimer,
     activeTask,
@@ -61,6 +62,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     toast,
     dismissToast,
   } = useWorkspace();
+
+  const userDisplayName =
+    profile?.fullName?.trim() ||
+    authProfile?.fullName?.trim() ||
+    user?.user_metadata?.full_name ||
+    (user?.email ? user.email.split('@')[0] : 'Workspace');
+  const userSubtitle = user?.email || 'Personal Workspace';
+  const userInitial = (userDisplayName || 'W')[0].toUpperCase();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -157,7 +166,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
       </div>
 
-      {/* Sujit Kumar Profile Card at bottom */}
+      {/* Dynamic Profile Card at bottom */}
       <div className="pt-4">
         <Link
           to="/settings"
@@ -167,11 +176,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         >
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EDF2FE] text-xs font-bold text-[#2F65F6]">
-              S
+              {userInitial}
             </div>
             <div className="min-w-0 text-left">
-              <div className="truncate text-xs font-bold text-[#1A1F2C]">Sujit Kumar</div>
-              <div className="truncate text-[10px] font-medium text-[#7E8B9B]">Personal Workspace</div>
+              <div className="truncate text-xs font-bold text-[#1A1F2C]">{userDisplayName}</div>
+              <div className="truncate text-[10px] font-medium text-[#7E8B9B]">{userSubtitle}</div>
             </div>
           </div>
           <ChevronDown className="h-4 w-4 text-[#98A2B3] shrink-0" />

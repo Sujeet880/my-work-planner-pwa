@@ -2,14 +2,6 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { getSupabaseBrowserClient } from '../lib/supabaseClient';
 import { useAuth } from './AuthContext';
 import {
-  PREVIEW_CALENDAR_CONNECTION,
-  PREVIEW_PROFILE,
-  PREVIEW_PROJECTS,
-  PREVIEW_TASKS,
-  PREVIEW_TIME_ENTRIES,
-  createInitialPreviewActiveTimer,
-} from '../data/previewData';
-import {
   calculateActiveSessionSeconds,
   getLocalDateISO,
 } from '../lib/timeMath';
@@ -27,6 +19,32 @@ import type {
   TimeEntry,
 } from '../types/models';
 import type { Database } from '../types/database.types';
+
+const INITIAL_EMPTY_PROFILE: Profile = {
+  id: '',
+  email: '',
+  fullName: '',
+  timezone: 'Asia/Kolkata',
+  dateFormat: 'DD/MM/YYYY',
+  timeFormat: '12h',
+  defaultEventDurationMinutes: 60,
+  defaultReminderOffsetMinutes: 15,
+  notificationsEnabled: true,
+  defaultCalendarSyncEnabled: false,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const INITIAL_EMPTY_CALENDAR_CONNECTION: CalendarConnection = {
+  isConfigured: false,
+  isConnected: false,
+  provider: 'google',
+  accountEmail: null,
+  selectedCalendarId: null,
+  selectedCalendarName: null,
+  syncEnabled: false,
+  lastSyncedAt: null,
+};
 
 export interface PendingTimerSwitch {
   targetTaskId: string;
@@ -130,8 +148,8 @@ const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefi
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const { user, profile: authProfile, isAuthenticated, isSupabaseConfigured } = useAuth();
 
-  const [profile, setProfile] = useState<Profile>(PREVIEW_PROFILE);
-  const [calendarConnection, setCalendarConnection] = useState<CalendarConnection>(PREVIEW_CALENDAR_CONNECTION);
+  const [profile, setProfile] = useState<Profile>(INITIAL_EMPTY_PROFILE);
+  const [calendarConnection, setCalendarConnection] = useState<CalendarConnection>(INITIAL_EMPTY_CALENDAR_CONNECTION);
   const [isSyncingCalendar, setIsSyncingCalendar] = useState<boolean>(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -248,21 +266,16 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isAuthenticated && user?.id) {
       loadUserData(user.id);
-    } else if (isSupabaseConfigured) {
-      // Clear data on logout / unauthenticated session to prevent data leakage
+    } else {
+      // Clear data on logout or unauthenticated session to prevent data leakage.
+      // Production must NEVER substitute fake, sample, or dummy preview data.
       setTasks([]);
       setProjects([]);
       setTimeEntries([]);
       setActiveTimer(null);
-      setCalendarConnection(PREVIEW_CALENDAR_CONNECTION);
-    } else {
-      // Fallback for Milestone 0 preview when Supabase credentials are not configured
-      setTasks(PREVIEW_TASKS);
-      setProjects(PREVIEW_PROJECTS);
-      setTimeEntries(PREVIEW_TIME_ENTRIES);
-      setActiveTimer(createInitialPreviewActiveTimer());
+      setCalendarConnection(INITIAL_EMPTY_CALENDAR_CONNECTION);
     }
-  }, [isAuthenticated, user?.id, isSupabaseConfigured, loadUserData]);
+  }, [isAuthenticated, user?.id, loadUserData]);
 
   const refreshData = useCallback(async () => {
     if (user?.id) {
