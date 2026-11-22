@@ -191,7 +191,7 @@ export function DashboardPage() {
       scheduledStartTime: '',
       plannedDurationMinutes: '',
       reminderOffsetMinutes: '',
-      syncToGoogleCalendar: false,
+      syncToGoogleCalendar: true,
     });
   };
 

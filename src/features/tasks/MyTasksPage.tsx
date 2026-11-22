@@ -235,7 +235,7 @@ export function MyTasksPage() {
       scheduledStartTime: '',
       plannedDurationMinutes: '',
       reminderOffsetMinutes: '',
-      syncToGoogleCalendar: false,
+      syncToGoogleCalendar: activeTab !== 'inbox',
     });
     setQuickTitle('');
   };

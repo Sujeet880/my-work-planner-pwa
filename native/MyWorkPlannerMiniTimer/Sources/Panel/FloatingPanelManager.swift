@@ -39,6 +39,39 @@ public final class FloatingPanelManager: ObservableObject {
 
         setupWindowMoveObserver(floatingPanel)
         setupTimerObservers()
+        setupEnvironmentObservers()
+    }
+
+    private func setupEnvironmentObservers() {
+        // Space changes: re-assert front ordering across macOS virtual desktops
+        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.activeSpaceDidChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self, self.isPanelVisible, let panel = self.panel else { return }
+                panel.orderFrontRegardless()
+            }
+            .store(in: &cancellables)
+
+        // Screen parameters change (external monitor plugged/unplugged, resolution switch)
+        NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                self.clampToVisibleScreen()
+                if self.isPanelVisible {
+                    self.panel?.orderFrontRegardless()
+                }
+            }
+            .store(in: &cancellables)
+
+        // App activation: ensure panel stays above newly focused third-party apps
+        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didActivateApplicationNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self, self.isPanelVisible, let panel = self.panel else { return }
+                panel.orderFrontRegardless()
+            }
+            .store(in: &cancellables)
     }
 
     private func setupTimerObservers() {
@@ -69,13 +102,13 @@ public final class FloatingPanelManager: ObservableObject {
     public func showPanel() {
         guard let panel = panel else {
             configure()
-            panel?.orderFront(nil)
+            panel?.orderFrontRegardless()
             isPanelVisible = true
             return
         }
 
         clampToVisibleScreen()
-        panel.orderFront(nil)
+        panel.orderFrontRegardless()
         isPanelVisible = true
     }
 

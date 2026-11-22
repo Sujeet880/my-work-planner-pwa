@@ -26,6 +26,7 @@ public final class FloatingPanel: NSPanel {
         // Using valid, mutually-compatible collection behaviors:
         self.collectionBehavior = [
             .canJoinAllSpaces,
+            .canJoinAllApplications,
             .fullScreenAuxiliary,
             .ignoresCycle
         ]

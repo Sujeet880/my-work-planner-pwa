@@ -658,6 +658,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           ? parseInt(values.reminderOffsetMinutes, 10) || null
           : null;
 
+      const shouldSync = Boolean(scheduledDate && (values.syncToGoogleCalendar ?? true));
+
       if (existingTaskId) {
         const prevTask = tasks.find((t) => t.id === existingTaskId);
         const updatedTask: Task = {
@@ -672,8 +674,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           scheduledStartTime,
           plannedDurationMinutes: plannedMinutes,
           reminderOffsetMinutes: reminderOffset,
-          syncToGoogleCalendar: values.syncToGoogleCalendar,
-          calendarSyncStatus: values.syncToGoogleCalendar ? 'pending' : 'not_synced',
+          syncToGoogleCalendar: shouldSync,
+          calendarSyncStatus: shouldSync ? 'pending' : 'not_synced',
           completedAt: prevTask?.completedAt || null,
           isArchived: prevTask?.isArchived || false,
           createdAt: prevTask?.createdAt || nowIso,
@@ -713,8 +715,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         scheduledStartTime,
         plannedDurationMinutes: plannedMinutes,
         reminderOffsetMinutes: reminderOffset,
-        syncToGoogleCalendar: values.syncToGoogleCalendar,
-        calendarSyncStatus: values.syncToGoogleCalendar ? 'pending' : 'not_synced',
+        syncToGoogleCalendar: shouldSync,
+        calendarSyncStatus: shouldSync ? 'pending' : 'not_synced',
         completedAt: null,
         isArchived: false,
         createdAt: nowIso,

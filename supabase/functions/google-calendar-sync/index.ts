@@ -1,5 +1,5 @@
 // supabase/functions/google-calendar-sync/index.ts
-// Processes pending Google Calendar sync jobs for the authenticated user
+// Processes pending Google Calendar sync jobs for authenticated users and background dispatchers
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
@@ -9,8 +9,10 @@ import {
   createGoogleCalendarEvent,
   deleteGoogleCalendarEvent,
   formatCalendarEvent,
+  listGoogleCalendarEvents,
   refreshGoogleAccessToken,
   updateGoogleCalendarEvent,
+  type GoogleEventPayload,
 } from '../_shared/google.ts';
 
 serve(async (req: Request) => {
@@ -20,18 +22,20 @@ serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
   const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID') || '';
   const googleClientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET') || '';
-  const encryptionKey = Deno.env.get('ENCRYPTION_KEY') || googleClientSecret || 'default-fallback-key-for-my-work-planner-32';
+  const encryptionKey =
+    Deno.env.get('ENCRYPTION_KEY') ||
+    googleClientSecret ||
+    'default-fallback-key-for-my-work-planner-32';
 
   const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { persistSession: false },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 
   try {
-    // Authenticate user via JWT
-    const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
+    // 1. Authenticate Request
+    const authHeader = req.headers.get('Authorization') || req.headers.get('authorization') || '';
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
         status: 401,
@@ -39,33 +43,178 @@ serve(async (req: Request) => {
       });
     }
 
-    const token = authHeader.replace(/^Bearer\s+/i, '');
-    const {
-      data: { user },
-      error: userError,
-    } = await adminClient.auth.getUser(token);
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    let callingUserId: string | null = null;
+    let isServiceRole = Boolean(supabaseServiceKey && token === supabaseServiceKey);
 
-    if (userError || !user) {
-      console.error('Sync auth verification failed:', userError?.message);
-      return new Response(
-        JSON.stringify({
-          error: `Unauthorized: ${userError?.message || 'Invalid or expired Supabase session'}`,
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    if (!isServiceRole) {
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          while (base64.length % 4) {
+            base64 += '=';
+          }
+          const payload = JSON.parse(atob(base64));
+          if (payload.role === 'service_role') {
+            isServiceRole = true;
+          }
         }
-      );
+      } catch {
+        // Continue to user token verification
+      }
     }
 
-    const userId = user.id;
+    let body: Record<string, unknown> = {};
+    if (req.method === 'POST') {
+      try {
+        body = await req.json();
+      } catch {
+        // Non-JSON or empty body is acceptable
+      }
+    }
 
-    // Optional body params (e.g. single taskId or retryFailed)
-    const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
+    if (isServiceRole) {
+      // Service role invocation (e.g. background dispatcher or admin trigger)
+      callingUserId = (body.userId as string) || null;
+    } else {
+      // User JWT verification
+      const {
+        data: { user },
+        error: userError,
+      } = await adminClient.auth.getUser(token);
+
+      if (userError || !user) {
+        console.error('Sync auth verification failed:', userError?.message);
+        return new Response(
+          JSON.stringify({
+            error: `Unauthorized: ${userError?.message || 'Invalid or expired Supabase session'}`,
+          }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      callingUserId = user.id;
+    }
+
+    // -------------------------------------------------------------
+    // AUDIT & CLEANUP ACTIONS
+    // -------------------------------------------------------------
+    if (body.action === 'audit_google_calendar' || body.action === 'clean_qa_events') {
+      const targetUserId = callingUserId || (body.userId as string);
+      if (!targetUserId) {
+        return new Response(JSON.stringify({ error: 'User ID required for audit/cleanup' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data: tokenRow } = await adminClient
+        .from('google_calendar_tokens')
+        .select('encrypted_refresh_token')
+        .eq('user_id', targetUserId)
+        .single();
+
+      if (!tokenRow?.encrypted_refresh_token) {
+        return new Response(JSON.stringify({ error: 'Google Calendar is not connected.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const refreshToken = await decryptToken(tokenRow.encrypted_refresh_token, encryptionKey);
+      const { access_token } = await refreshGoogleAccessToken(
+        refreshToken,
+        googleClientId,
+        googleClientSecret
+      );
+
+      const googleEvents = await listGoogleCalendarEvents(access_token, 'primary');
+      const { data: dbTasks } = await adminClient.from('tasks').select('*').eq('user_id', targetUserId);
+      const { data: dbMappings } = await adminClient
+        .from('google_calendar_event_mappings')
+        .select('*')
+        .eq('user_id', targetUserId);
+
+      const mappingByEventId = new Map(dbMappings?.map((m) => [m.google_event_id, m]) || []);
+      const mappingByTaskId = new Map(dbMappings?.map((m) => [m.task_id, m]) || []);
+      const taskById = new Map(dbTasks?.map((t) => [t.id, t]) || []);
+
+      const classified = googleEvents.map((ev) => {
+        const mapping = mappingByEventId.get(ev.id);
+        const task = mapping?.task_id ? taskById.get(mapping.task_id) : undefined;
+        let classification = 'unmapped_external';
+
+        if (mapping && task) {
+          classification = 'genuine_mapped';
+        } else if (ev.summary?.startsWith('QA Task') || ev.summary?.startsWith('Debug task')) {
+          classification = 'orphan_qa_test';
+        } else if (ev.summary === 'Youtube Video' || ev.summary === 'test task' || ev.summary === 'Test again') {
+          // If summary matches genuine task but event ID doesn't match active mapping
+          const mappedForTask = Array.from(mappingByTaskId.values()).find(
+            (m) => taskById.get(m.task_id)?.title === ev.summary
+          );
+          if (mappedForTask && mappedForTask.google_event_id !== ev.id) {
+            classification = 'orphan_duplicate';
+          } else if (mappedForTask && mappedForTask.google_event_id === ev.id) {
+            classification = 'genuine_mapped';
+          }
+        }
+
+        return {
+          id: ev.id,
+          summary: ev.summary,
+          start: ev.start,
+          end: ev.end,
+          classification,
+          mappingTaskId: mapping?.task_id || null,
+        };
+      });
+
+      if (body.action === 'audit_google_calendar') {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            totalGoogleEvents: googleEvents.length,
+            events: classified,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (body.action === 'clean_qa_events') {
+        const toDelete = classified.filter(
+          (c) => c.classification === 'orphan_qa_test' || c.classification === 'orphan_duplicate'
+        );
+        const deletedSummaries: string[] = [];
+
+        for (const item of toDelete) {
+          try {
+            await deleteGoogleCalendarEvent(access_token, 'primary', item.id);
+            deletedSummaries.push(`${item.summary} (${item.id})`);
+          } catch (delErr) {
+            console.warn(`Failed to delete orphan event ${item.id}:`, delErr);
+          }
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            deletedCount: deletedSummaries.length,
+            deletedSummaries,
+            remainingEvents: classified.length - deletedSummaries.length,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     const retryFailed = body.retryFailed === true;
 
     // If retryFailed is requested, reset failed jobs back to pending
-    if (retryFailed) {
+    if (retryFailed && callingUserId) {
       await adminClient
         .from('google_calendar_sync_jobs')
         .update({
@@ -74,18 +223,23 @@ serve(async (req: Request) => {
           last_error: null,
           updated_at: new Date().toISOString(),
         })
-        .eq('user_id', userId)
+        .eq('user_id', callingUserId)
         .eq('status', 'failed');
     }
 
-    // Query pending jobs for this user
-    const { data: jobs, error: jobsError } = await adminClient
+    // 2. Query Pending Jobs (scoped to user if callingUserId present, else batch of 50)
+    let jobsQuery = adminClient
       .from('google_calendar_sync_jobs')
       .select('*')
-      .eq('user_id', userId)
       .in('status', ['pending', 'processing'])
       .order('created_at', { ascending: true })
-      .limit(30);
+      .limit(50);
+
+    if (callingUserId) {
+      jobsQuery = jobsQuery.eq('user_id', callingUserId);
+    }
+
+    const { data: jobs, error: jobsError } = await jobsQuery;
 
     if (jobsError) {
       throw new Error(`Failed to query sync jobs: ${jobsError.message}`);
@@ -98,169 +252,209 @@ serve(async (req: Request) => {
       );
     }
 
-    // Retrieve user's stored refresh token
-    const { data: tokenRow } = await adminClient
-      .from('google_calendar_tokens')
-      .select('encrypted_refresh_token')
-      .eq('user_id', userId)
-      .single();
-
-    if (!tokenRow?.encrypted_refresh_token) {
-      // User is not connected
-      await adminClient
-        .from('google_calendar_sync_jobs')
-        .update({
-          status: 'failed',
-          last_error: 'Google Calendar is not connected.',
-          updated_at: new Date().toISOString(),
-        })
-        .in(
-          'id',
-          jobs.map((j: { id: string }) => j.id)
-        );
-
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Google Calendar is not connected.',
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Group jobs by user_id to cache and reuse tokens efficiently
+    const jobsByUser: Record<string, typeof jobs> = {};
+    for (const job of jobs) {
+      if (!jobsByUser[job.user_id]) {
+        jobsByUser[job.user_id] = [];
+      }
+      jobsByUser[job.user_id].push(job);
     }
 
-    // Decrypt refresh token
-    const refreshToken = await decryptToken(tokenRow.encrypted_refresh_token, encryptionKey);
+    let totalSucceeded = 0;
+    let totalFailed = 0;
 
-    // Refresh Google access token
-    let accessToken = '';
-    try {
-      const refreshed = await refreshGoogleAccessToken(
-        refreshToken,
-        googleClientId,
-        googleClientSecret
-      );
-      accessToken = refreshed.access_token;
-    } catch (refreshErr: unknown) {
-      const errMsg = refreshErr instanceof Error ? refreshErr.message : String(refreshErr);
-      if (errMsg.includes('TOKEN_REVOKED')) {
+    // Process each user's jobs
+    for (const [userId, userJobs] of Object.entries(jobsByUser)) {
+      // Retrieve user's stored refresh token
+      const { data: tokenRow } = await adminClient
+        .from('google_calendar_tokens')
+        .select('encrypted_refresh_token')
+        .eq('user_id', userId)
+        .single();
+
+      if (!tokenRow?.encrypted_refresh_token) {
         await adminClient
-          .from('google_calendar_connections')
+          .from('google_calendar_sync_jobs')
           .update({
-            status: 'needs_reauth',
-            last_error: 'Google authorization was revoked or expired. Please reconnect.',
+            status: 'failed',
+            last_error: 'Google Calendar is not connected.',
             updated_at: new Date().toISOString(),
           })
-          .eq('user_id', userId);
+          .in(
+            'id',
+            userJobs.map((j) => j.id)
+          );
+        totalFailed += userJobs.length;
+        continue;
       }
-      throw new Error(`Google token refresh failed: ${errMsg}`);
-    }
 
-    // Fetch user profile preferences (timezone, default duration)
-    const { data: profile } = await adminClient
-      .from('profiles')
-      .select('timezone, default_event_duration_minutes')
-      .eq('id', userId)
-      .single();
-
-    const userTimezone = profile?.timezone || 'Asia/Kolkata';
-    const defaultDuration = profile?.default_event_duration_minutes || 60;
-
-    let succeededCount = 0;
-    let failedCount = 0;
-
-    // Process each job sequentially to guarantee order
-    for (const job of jobs) {
-      // Mark job as processing
-      await adminClient
-        .from('google_calendar_sync_jobs')
-        .update({ status: 'processing', updated_at: new Date().toISOString() })
-        .eq('id', job.id);
-
+      // Decrypt refresh token & refresh access token
+      let accessToken = '';
       try {
-        const calendarId = job.google_calendar_id || 'primary';
-
-        if (job.operation === 'delete') {
-          // Identify event ID
-          let eventId = job.google_event_id;
-          if (!eventId && job.task_id) {
-            const { data: mapping } = await adminClient
-              .from('google_calendar_event_mappings')
-              .select('google_event_id')
-              .eq('user_id', userId)
-              .eq('task_id', job.task_id)
-              .eq('google_calendar_id', calendarId)
-              .single();
-            eventId = mapping?.google_event_id;
-          }
-
-          if (eventId) {
-            await deleteGoogleCalendarEvent(accessToken, calendarId, eventId);
-            // Delete mapping record
-            await adminClient
-              .from('google_calendar_event_mappings')
-              .delete()
-              .eq('user_id', userId)
-              .eq('google_event_id', eventId);
-          }
-
-          if (job.task_id) {
-            await adminClient
-              .from('tasks')
-              .update({
-                calendar_sync_status: 'not_synced',
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', job.task_id)
-              .eq('user_id', userId);
-          }
-
-          // Mark job completed
+        const refreshToken = await decryptToken(tokenRow.encrypted_refresh_token, encryptionKey);
+        const refreshed = await refreshGoogleAccessToken(
+          refreshToken,
+          googleClientId,
+          googleClientSecret
+        );
+        accessToken = refreshed.access_token;
+      } catch (refreshErr: unknown) {
+        const errMsg = refreshErr instanceof Error ? refreshErr.message : String(refreshErr);
+        if (errMsg.includes('TOKEN_REVOKED')) {
           await adminClient
-            .from('google_calendar_sync_jobs')
+            .from('google_calendar_connections')
             .update({
-              status: 'completed',
-              last_error: null,
+              status: 'needs_reauth',
+              last_error: 'Google authorization was revoked or expired. Please reconnect.',
               updated_at: new Date().toISOString(),
             })
-            .eq('id', job.id);
-
-          succeededCount++;
-          continue;
+            .eq('user_id', userId);
         }
 
-        // Operation: Upsert
-        if (job.operation === 'upsert') {
-          // Fetch current task state if task_id exists
-          let taskData = job.payload;
-          if (job.task_id) {
+        await adminClient
+          .from('google_calendar_sync_jobs')
+          .update({
+            status: 'failed',
+            last_error: `Google token refresh failed: ${errMsg}`,
+            updated_at: new Date().toISOString(),
+          })
+          .in(
+            'id',
+            userJobs.map((j) => j.id)
+          );
+
+        totalFailed += userJobs.length;
+        continue;
+      }
+
+      // Fetch user profile preferences (timezone, default duration)
+      const { data: profile } = await adminClient
+        .from('profiles')
+        .select('timezone, default_event_duration_minutes')
+        .eq('id', userId)
+        .single();
+
+      const userTimezone = profile?.timezone || 'Asia/Kolkata';
+      const defaultDuration = profile?.default_event_duration_minutes || 60;
+
+      // Process each job sequentially
+      for (const job of userJobs) {
+        await adminClient
+          .from('google_calendar_sync_jobs')
+          .update({ status: 'processing', updated_at: new Date().toISOString() })
+          .eq('id', job.id);
+
+        try {
+          const calendarId = job.google_calendar_id || 'primary';
+
+          // -------------------------------------------------------------
+          // OPERATION: DELETE
+          // -------------------------------------------------------------
+          if (job.operation === 'delete') {
+            let eventId = job.google_event_id;
+            if (!eventId && job.task_id) {
+              const { data: mapping } = await adminClient
+                .from('google_calendar_event_mappings')
+                .select('google_event_id')
+                .eq('user_id', userId)
+                .eq('task_id', job.task_id)
+                .eq('google_calendar_id', calendarId)
+                .maybeSingle();
+              eventId = mapping?.google_event_id;
+            }
+
+            if (eventId) {
+              await deleteGoogleCalendarEvent(accessToken, calendarId, eventId);
+              await adminClient
+                .from('google_calendar_event_mappings')
+                .delete()
+                .eq('user_id', userId)
+                .eq('google_event_id', eventId);
+            }
+
+            if (job.task_id) {
+              await adminClient
+                .from('tasks')
+                .update({
+                  calendar_sync_status: 'not_synced',
+                  sync_to_google_calendar: false,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', job.task_id)
+                .eq('user_id', userId);
+            }
+
+            await adminClient
+              .from('google_calendar_sync_jobs')
+              .update({
+                status: 'completed',
+                last_error: null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', job.id);
+
+            totalSucceeded++;
+            continue;
+          }
+
+          // -------------------------------------------------------------
+          // OPERATION: UPSERT
+          // -------------------------------------------------------------
+          if (job.operation === 'upsert') {
+            // Idempotency Rule: If job has no task_id, the task was deleted before sync.
+            // Never create orphan events on Google Calendar!
+            if (!job.task_id) {
+              await adminClient
+                .from('google_calendar_sync_jobs')
+                .update({
+                  status: 'completed',
+                  last_error: 'Skipped: task was removed before sync',
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', job.id);
+              totalSucceeded++;
+              continue;
+            }
+
             const { data: freshTask } = await adminClient
               .from('tasks')
               .select('*')
               .eq('id', job.task_id)
               .eq('user_id', userId)
-              .single();
+              .maybeSingle();
 
-            if (freshTask) {
-              taskData = {
-                title: freshTask.title,
-                description: freshTask.description,
-                scheduled_date: freshTask.scheduled_date,
-                scheduled_start_time: freshTask.scheduled_start_time,
-                planned_duration_minutes: freshTask.planned_duration_minutes,
-                is_archived: freshTask.is_archived,
-              };
+            // If task no longer exists in database, do not create or update remote event
+            if (!freshTask) {
+              await adminClient
+                .from('google_calendar_sync_jobs')
+                .update({
+                  status: 'completed',
+                  last_error: 'Skipped: task does not exist in database',
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', job.id);
+              totalSucceeded++;
+              continue;
             }
-          }
 
-          // Case E: If task is archived or unscheduled (moved to Inbox), delete remote event
-          if (!taskData.scheduled_date || taskData.is_archived) {
-            if (job.task_id) {
+            const taskData = {
+              title: freshTask.title,
+              description: freshTask.description,
+              scheduled_date: freshTask.scheduled_date,
+              scheduled_start_time: freshTask.scheduled_start_time,
+              planned_duration_minutes: freshTask.planned_duration_minutes,
+              is_archived: freshTask.is_archived,
+            };
+
+            // Case E: If task has no scheduled date (Inbox) or is archived, delete remote event
+            if (!taskData.scheduled_date || taskData.is_archived) {
               const { data: existingMapping } = await adminClient
                 .from('google_calendar_event_mappings')
                 .select('google_event_id')
                 .eq('user_id', userId)
                 .eq('task_id', job.task_id)
-                .single();
+                .maybeSingle();
 
               if (existingMapping?.google_event_id) {
                 await deleteGoogleCalendarEvent(
@@ -279,71 +473,109 @@ serve(async (req: Request) => {
                 .from('tasks')
                 .update({
                   calendar_sync_status: 'not_synced',
+                  sync_to_google_calendar: false,
                   updated_at: new Date().toISOString(),
                 })
                 .eq('id', job.task_id)
                 .eq('user_id', userId);
+
+              await adminClient
+                .from('google_calendar_sync_jobs')
+                .update({
+                  status: 'completed',
+                  last_error: null,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', job.id);
+
+              totalSucceeded++;
+              continue;
             }
 
-            await adminClient
-              .from('google_calendar_sync_jobs')
-              .update({
-                status: 'completed',
-                last_error: null,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', job.id);
+            // Construct Google Event Payload (Cases A, B, C, D)
+            const eventPayload = formatCalendarEvent(taskData, userTimezone, defaultDuration);
+            if (!eventPayload) {
+              await adminClient
+                .from('google_calendar_sync_jobs')
+                .update({ status: 'completed', updated_at: new Date().toISOString() })
+                .eq('id', job.id);
+              totalSucceeded++;
+              continue;
+            }
 
-            succeededCount++;
-            continue;
-          }
+            // Deterministic Google Event ID based on canonical Task UUID (RFC2938 base32hex: [a-v0-9])
+            const deterministicEventId = `mwp${job.task_id.replace(/-/g, '').toLowerCase()}`;
 
-          // Format event according to rules
-          const eventPayload = formatCalendarEvent(taskData, userTimezone, defaultDuration);
-          if (!eventPayload) {
-            // No scheduled date -> complete without event
-            await adminClient
-              .from('google_calendar_sync_jobs')
-              .update({ status: 'completed', updated_at: new Date().toISOString() })
-              .eq('id', job.id);
-            succeededCount++;
-            continue;
-          }
+            const extendedPayload: GoogleEventPayload = {
+              ...eventPayload,
+              extendedProperties: {
+                private: {
+                  myWorkPlannerTaskId: job.task_id,
+                  myWorkPlannerUserId: userId,
+                },
+              },
+            };
 
-          // Check if mapping exists
-          let existingEventId = job.google_event_id;
-          if (!existingEventId && job.task_id) {
-            const { data: mapping } = await adminClient
-              .from('google_calendar_event_mappings')
-              .select('google_event_id')
-              .eq('user_id', userId)
-              .eq('task_id', job.task_id)
-              .eq('google_calendar_id', calendarId)
-              .single();
-            existingEventId = mapping?.google_event_id;
-          }
+            // Check if mapping exists
+            let existingEventId = job.google_event_id;
+            if (!existingEventId) {
+              const { data: mapping } = await adminClient
+                .from('google_calendar_event_mappings')
+                .select('google_event_id')
+                .eq('user_id', userId)
+                .eq('task_id', job.task_id)
+                .eq('google_calendar_id', calendarId)
+                .maybeSingle();
+              existingEventId = mapping?.google_event_id;
+            }
 
-          let remoteEventId = existingEventId;
-          if (existingEventId) {
-            // Update existing event
-            await updateGoogleCalendarEvent(
-              accessToken,
-              calendarId,
-              existingEventId,
-              eventPayload
-            );
-          } else {
-            // Create new event
-            const created = await createGoogleCalendarEvent(
-              accessToken,
-              calendarId,
-              eventPayload
-            );
-            remoteEventId = created.id;
+            let remoteEventId = existingEventId;
+            if (existingEventId) {
+              try {
+                // Update existing event via PATCH
+                await updateGoogleCalendarEvent(
+                  accessToken,
+                  calendarId,
+                  existingEventId,
+                  extendedPayload
+                );
+              } catch (updateErr: unknown) {
+                const errMsg = updateErr instanceof Error ? updateErr.message : String(updateErr);
+                if (errMsg.includes('404') || errMsg.includes('410')) {
+                  // Event was deleted externally in Google Calendar; recreate it with deterministic ID
+                  const created = await createGoogleCalendarEvent(accessToken, calendarId, {
+                    ...extendedPayload,
+                    id: deterministicEventId,
+                  });
+                  remoteEventId = created.id || deterministicEventId;
+                } else {
+                  throw updateErr;
+                }
+              }
+            } else {
+              // Create new event with deterministic ID to prevent duplicates
+              const created = await createGoogleCalendarEvent(accessToken, calendarId, {
+                ...extendedPayload,
+                id: deterministicEventId,
+              });
 
-            // Insert mapping
-            if (job.task_id && remoteEventId) {
-              await adminClient.from('google_calendar_event_mappings').upsert(
+              if (created.alreadyExists) {
+                // Event already exists with this ID in Google Calendar; update it instead of duplicating
+                await updateGoogleCalendarEvent(
+                  accessToken,
+                  calendarId,
+                  deterministicEventId,
+                  extendedPayload
+                );
+                remoteEventId = deterministicEventId;
+              } else {
+                remoteEventId = created.id;
+              }
+            }
+
+            // Upsert mapping into google_calendar_event_mappings
+            if (remoteEventId) {
+              const { error: mapErr } = await adminClient.from('google_calendar_event_mappings').upsert(
                 {
                   user_id: userId,
                   task_id: job.task_id,
@@ -355,79 +587,80 @@ serve(async (req: Request) => {
                 },
                 { onConflict: 'user_id,task_id,google_calendar_id' }
               );
+              if (mapErr) {
+                console.error('Error recording event mapping:', mapErr);
+              }
             }
-          }
 
-          // Mark task as synced
-          if (job.task_id) {
+            // Mark task as synced
             await adminClient
               .from('tasks')
               .update({
                 calendar_sync_status: 'synced',
+                sync_to_google_calendar: true,
                 updated_at: new Date().toISOString(),
               })
               .eq('id', job.task_id)
               .eq('user_id', userId);
-          }
 
-          // Mark job completed
+            // Mark job completed
+            await adminClient
+              .from('google_calendar_sync_jobs')
+              .update({
+                status: 'completed',
+                last_error: null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', job.id);
+
+            totalSucceeded++;
+          }
+        } catch (jobErr: unknown) {
+          totalFailed++;
+          const errorMessage = jobErr instanceof Error ? jobErr.message : String(jobErr);
+          console.error(`Sync job ${job.id} failed:`, errorMessage);
+
+          const nextRetry = (job.retry_count || 0) + 1;
+          const isMaxExceeded = nextRetry >= (job.max_retries || 5);
+
           await adminClient
             .from('google_calendar_sync_jobs')
             .update({
-              status: 'completed',
-              last_error: null,
+              status: isMaxExceeded ? 'failed' : 'pending',
+              retry_count: nextRetry,
+              last_error: errorMessage,
               updated_at: new Date().toISOString(),
             })
             .eq('id', job.id);
 
-          succeededCount++;
-        }
-      } catch (jobErr: unknown) {
-        failedCount++;
-        const errorMessage = jobErr instanceof Error ? jobErr.message : String(jobErr);
-        console.error(`Sync job ${job.id} failed:`, errorMessage);
-
-        const nextRetry = (job.retry_count || 0) + 1;
-        const isMaxExceeded = nextRetry >= (job.max_retries || 5);
-
-        await adminClient
-          .from('google_calendar_sync_jobs')
-          .update({
-            status: isMaxExceeded ? 'failed' : 'pending',
-            retry_count: nextRetry,
-            last_error: errorMessage,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', job.id);
-
-        if (job.task_id && isMaxExceeded) {
-          await adminClient
-            .from('tasks')
-            .update({
-              calendar_sync_status: 'failed',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', job.task_id)
-            .eq('user_id', userId);
+          if (job.task_id && isMaxExceeded) {
+            await adminClient
+              .from('tasks')
+              .update({
+                calendar_sync_status: 'failed',
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', job.task_id);
+          }
         }
       }
-    }
 
-    // Update last_sync_at on connection
-    await adminClient
-      .from('google_calendar_connections')
-      .update({
-        last_sync_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', userId);
+      // Update last_sync_at on connection
+      await adminClient
+        .from('google_calendar_connections')
+        .update({
+          last_sync_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId);
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         processedCount: jobs.length,
-        succeededCount,
-        failedCount,
+        succeededCount: totalSucceeded,
+        failedCount: totalFailed,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

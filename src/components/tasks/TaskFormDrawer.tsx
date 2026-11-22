@@ -11,7 +11,8 @@ const STANDARD_OFFSETS = ['0', '5', '10', '15', '30', '60'];
 function buildInitialValues(
   editingTask: ReturnType<typeof useWorkspace>['editingTask'],
   defaultDate: string | null,
-  defaultReminderOffset: number = 15
+  defaultReminderOffset: number = 15,
+  defaultCalendarSyncEnabled: boolean = true
 ): { formValues: TaskFormValues; isCustom: boolean; customOffset: string } {
   if (editingTask) {
     const rawOffset =
@@ -32,7 +33,7 @@ function buildInitialValues(
           : '',
         reminderOffsetMinutes: rawOffset,
         reminderCustomTime: '09:00',
-        syncToGoogleCalendar: false,
+        syncToGoogleCalendar: editingTask.syncToGoogleCalendar ?? Boolean(editingTask.scheduledDate),
       },
       isCustom,
       customOffset: isCustom ? rawOffset : '',
@@ -53,7 +54,7 @@ function buildInitialValues(
       plannedDurationMinutes: '',
       reminderOffsetMinutes: initialOffset,
       reminderCustomTime: '09:00',
-      syncToGoogleCalendar: false,
+      syncToGoogleCalendar: Boolean(defaultDate) && defaultCalendarSyncEnabled,
     },
     isCustom,
     customOffset: isCustom ? initialOffset : '',
@@ -71,8 +72,15 @@ export function TaskFormDrawer() {
     saveTask,
   } = useWorkspace();
 
+  const defaultCalendarSync = profile?.defaultCalendarSyncEnabled ?? true;
+
   const [initialData] = useState(() =>
-    buildInitialValues(editingTask, taskDrawerDefaultDate, profile?.defaultReminderOffsetMinutes ?? 15)
+    buildInitialValues(
+      editingTask,
+      taskDrawerDefaultDate,
+      profile?.defaultReminderOffsetMinutes ?? 15,
+      defaultCalendarSync
+    )
   );
   const [values, setValues] = useState<TaskFormValues>(initialData.formValues);
   const [isCustomOffset, setIsCustomOffset] = useState<boolean>(initialData.isCustom);
@@ -84,14 +92,15 @@ export function TaskFormDrawer() {
       const data = buildInitialValues(
         editingTask,
         taskDrawerDefaultDate,
-        profile?.defaultReminderOffsetMinutes ?? 15
+        profile?.defaultReminderOffsetMinutes ?? 15,
+        defaultCalendarSync
       );
       setValues(data.formValues);
       setIsCustomOffset(data.isCustom);
       setCustomOffsetMinutes(data.customOffset);
       setErrors({});
     }
-  }, [taskDrawerOpen, editingTask, taskDrawerDefaultDate, profile?.defaultReminderOffsetMinutes]);
+  }, [taskDrawerOpen, editingTask, taskDrawerDefaultDate, profile?.defaultReminderOffsetMinutes, defaultCalendarSync]);
 
   const activeProjects = projects.filter((p) => !p.isArchived);
 
@@ -454,6 +463,28 @@ export function TaskFormDrawer() {
             </FieldWrapper>
           </div>
         )}
+
+        {/* Google Calendar Sync Toggle */}
+        <div className="flex items-center justify-between rounded-xl border border-[#EDF2FE] bg-[#F8FAFD] p-3.5">
+          <div className="space-y-0.5 pr-2">
+            <label htmlFor="task-sync-calendar" className="text-xs font-semibold text-[#1A1C20] cursor-pointer block">
+              Sync to Google Calendar
+            </label>
+            <p className="text-[11px] text-[#7E8B9B]">
+              {isInboxTask
+                ? 'Only scheduled tasks can sync to Google Calendar.'
+                : 'Automatically keeps Google Calendar updated.'}
+            </p>
+          </div>
+          <input
+            id="task-sync-calendar"
+            type="checkbox"
+            disabled={isInboxTask}
+            checked={!isInboxTask && values.syncToGoogleCalendar}
+            onChange={(e) => setValues((v) => ({ ...v, syncToGoogleCalendar: e.target.checked }))}
+            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+          />
+        </div>
 
         {/* Contextual notice */}
         {isInboxTask && (

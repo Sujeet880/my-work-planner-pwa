@@ -101,6 +101,8 @@ export const taskService = {
       ? parseInt(values.reminderOffsetMinutes, 10) || null
       : null;
 
+    const shouldSyncCalendar = values.syncToGoogleCalendar ?? Boolean(scheduledDate);
+
     try {
       const { data, error } = await supabase
         .from('tasks')
@@ -115,8 +117,8 @@ export const taskService = {
           scheduled_start_time: scheduledStartTime,
           planned_duration_minutes: plannedMinutes,
           reminder_offset_minutes: reminderOffset,
-          sync_to_google_calendar: values.syncToGoogleCalendar ?? false,
-          calendar_sync_status: 'not_synced',
+          sync_to_google_calendar: shouldSyncCalendar,
+          calendar_sync_status: shouldSyncCalendar && scheduledDate ? 'pending' : 'not_synced',
           completed_at: null,
           is_archived: false,
           sort_order: 0,
@@ -129,10 +131,17 @@ export const taskService = {
       }
 
       const task = data ? mapTaskFromRow(data) : null;
-      if (task && task.syncToGoogleCalendar && task.scheduledDate) {
-        calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
-          console.warn('Calendar sync job enqueue warning:', err);
-        });
+      if (task) {
+        if (task.syncToGoogleCalendar && task.scheduledDate) {
+          calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
+            console.warn('Calendar sync job enqueue warning:', err);
+          });
+        } else if (!task.scheduledDate) {
+          // Moved to inbox (Case E) - remove from Google Calendar
+          calendarService.queueSyncJob(task.id, 'delete').catch((err) => {
+            console.warn('Calendar delete sync enqueue warning:', err);
+          });
+        }
       }
 
       if (task && task.reminderOffsetMinutes !== null && task.scheduledDate) {
@@ -188,6 +197,8 @@ export const taskService = {
       ? parseInt(values.reminderOffsetMinutes, 10) || null
       : null;
 
+    const shouldSyncCalendar = values.syncToGoogleCalendar ?? Boolean(scheduledDate);
+
     try {
       const { data, error } = await supabase
         .from('tasks')
@@ -200,7 +211,7 @@ export const taskService = {
           scheduled_start_time: scheduledStartTime,
           planned_duration_minutes: plannedMinutes,
           reminder_offset_minutes: reminderOffset,
-          sync_to_google_calendar: values.syncToGoogleCalendar ?? false,
+          sync_to_google_calendar: shouldSyncCalendar,
           updated_at: new Date().toISOString(),
         })
         .eq('id', taskId)
@@ -213,10 +224,17 @@ export const taskService = {
       }
 
       const task = data ? mapTaskFromRow(data) : null;
-      if (task && task.syncToGoogleCalendar && task.scheduledDate) {
-        calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
-          console.warn('Calendar sync job enqueue warning:', err);
-        });
+      if (task) {
+        if (task.syncToGoogleCalendar && task.scheduledDate) {
+          calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
+            console.warn('Calendar sync job enqueue warning:', err);
+          });
+        } else if (!task.scheduledDate) {
+          // Moved to inbox (Case E) - remove from Google Calendar
+          calendarService.queueSyncJob(task.id, 'delete').catch((err) => {
+            console.warn('Calendar delete sync enqueue warning:', err);
+          });
+        }
       }
 
       if (task && task.reminderOffsetMinutes !== null && task.scheduledDate) {
@@ -275,10 +293,17 @@ export const taskService = {
       }
 
       const task = data ? mapTaskFromRow(data) : null;
-      if (task && task.syncToGoogleCalendar && task.scheduledDate) {
-        calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
-          console.warn('Calendar sync job enqueue warning:', err);
-        });
+      if (task) {
+        if (task.syncToGoogleCalendar && task.scheduledDate) {
+          calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
+            console.warn('Calendar sync job enqueue warning:', err);
+          });
+        } else if (!task.scheduledDate) {
+          // Moved to inbox (Case E) - remove from Google Calendar
+          calendarService.queueSyncJob(task.id, 'delete').catch((err) => {
+            console.warn('Calendar delete sync enqueue warning:', err);
+          });
+        }
       }
 
       if (task && task.reminderOffsetMinutes !== null && task.scheduledDate) {
@@ -334,10 +359,17 @@ export const taskService = {
       }
 
       const task = data ? mapTaskFromRow(data) : null;
-      if (task && task.syncToGoogleCalendar && task.scheduledDate) {
-        calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
-          console.warn('Calendar sync job enqueue warning:', err);
-        });
+      if (task) {
+        if (task.syncToGoogleCalendar && task.scheduledDate) {
+          calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
+            console.warn('Calendar sync job enqueue warning:', err);
+          });
+        } else if (!task.scheduledDate) {
+          // Moved to inbox (Case E) - remove from Google Calendar
+          calendarService.queueSyncJob(task.id, 'delete').catch((err) => {
+            console.warn('Calendar delete sync enqueue warning:', err);
+          });
+        }
       }
 
       if (task && task.reminderOffsetMinutes !== null && task.scheduledDate) {
@@ -374,6 +406,13 @@ export const taskService = {
     }
 
     try {
+      if (isArchived) {
+        // Remove from Google Calendar if archived (Case E)
+        calendarService.queueSyncJob(taskId, 'delete').catch((err) => {
+          console.warn('Calendar delete sync enqueue warning on archive:', err);
+        });
+      }
+
       const { error } = await supabase
         .from('tasks')
         .update({
@@ -385,6 +424,22 @@ export const taskService = {
 
       if (error) {
         return { success: false, error: error.message };
+      }
+
+      if (!isArchived) {
+        // If unarchiving, retrieve task to re-sync if scheduled
+        const { data } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('id', taskId)
+          .eq('user_id', userId)
+          .single();
+        const task = data ? mapTaskFromRow(data) : null;
+        if (task && task.syncToGoogleCalendar && task.scheduledDate) {
+          calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
+            console.warn('Calendar sync job enqueue warning on unarchive:', err);
+          });
+        }
       }
 
       return { success: true, error: null };

@@ -10,6 +10,7 @@ export interface GoogleTokens {
 }
 
 export interface GoogleEventPayload {
+  id?: string;
   summary: string;
   description?: string;
   start: {
@@ -21,6 +22,9 @@ export interface GoogleEventPayload {
     date?: string;
     dateTime?: string;
     timeZone?: string;
+  };
+  extendedProperties?: {
+    private?: Record<string, string>;
   };
 }
 
@@ -205,12 +209,14 @@ export function formatCalendarEvent(
 
 /**
  * Creates a new event in Google Calendar.
+ * Supports custom deterministic event ID (base32hex, 5-1024 chars).
+ * Returns status 409 Conflict if an event with that ID already exists.
  */
 export async function createGoogleCalendarEvent(
   accessToken: string,
   calendarId: string = 'primary',
   event: GoogleEventPayload
-): Promise<{ id: string }> {
+): Promise<{ id: string; alreadyExists?: boolean }> {
   const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
   const response = await fetch(url, {
     method: 'POST',
@@ -221,12 +227,53 @@ export async function createGoogleCalendarEvent(
     body: JSON.stringify(event),
   });
 
+  if (response.status === 409) {
+    // Event with this custom ID already exists in Google Calendar
+    return { id: event.id || '', alreadyExists: true };
+  }
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Google Calendar create event failed (${response.status}): ${errorText}`);
   }
 
   return response.json();
+}
+
+/**
+ * Lists events from Google Calendar within an optional time range or search query.
+ */
+export async function listGoogleCalendarEvents(
+  accessToken: string,
+  calendarId: string = 'primary',
+  options?: { timeMin?: string; timeMax?: string; q?: string }
+): Promise<Array<{
+  id: string;
+  summary?: string;
+  description?: string;
+  start?: { date?: string; dateTime?: string };
+  end?: { date?: string; dateTime?: string };
+  extendedProperties?: { private?: Record<string, string> };
+}>> {
+  const params = new URLSearchParams();
+  if (options?.timeMin) params.set('timeMin', options.timeMin);
+  if (options?.timeMax) params.set('timeMax', options.timeMax);
+  if (options?.q) params.set('q', options.q);
+  params.set('singleEvents', 'true');
+  params.set('maxResults', '250');
+
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Google Calendar list events failed (${response.status}): ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.items || [];
 }
 
 /**

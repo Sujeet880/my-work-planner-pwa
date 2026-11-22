@@ -176,8 +176,19 @@ serve(async (req: Request) => {
               planned_duration_minutes: task.planned_duration_minutes,
             },
             p_calendar_id: 'primary',
+            p_user_id: userId,
           });
         }
+
+        // Trigger immediate background sync
+        fetch(`${supabaseUrl}/functions/v1/google-calendar-sync`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId }),
+        }).catch((err) => console.warn('Initial sync trigger error:', err));
       }
 
       // Redirect user back to application with success flag
