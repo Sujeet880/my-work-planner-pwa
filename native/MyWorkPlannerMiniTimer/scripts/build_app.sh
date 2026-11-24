@@ -37,9 +37,23 @@ chmod +x "${APP_BUNDLE}/Contents/MacOS/${APP_NAME}"
 
 cp "${PROJECT_DIR}/Resources/Info.plist" "${APP_BUNDLE}/Contents/Info.plist"
 
-# 4. Ad-hoc code sign for local execution
-echo "--> Applying ad-hoc local signature..."
-codesign --force --deep --sign - "${APP_BUNDLE}"
+# 4. Code sign with consistent bundle identifier
+echo "--> Checking available code signing identities..."
+SIGNING_IDENTITY=$(security find-identity -v -p codesigning | grep "Apple Development" | head -n 1 | awk -F '"' '{print $2}' || true)
+if [ -n "${SIGNING_IDENTITY}" ]; then
+    echo "--> Signing with Apple Development identity: ${SIGNING_IDENTITY}..."
+    codesign --force --deep --sign "${SIGNING_IDENTITY}" --identifier "com.myworkplanner.minitimer" "${APP_BUNDLE}"
+else
+    echo "--> No Apple Development identity installed in Keychain. Applying ad-hoc code signature (--sign -)..."
+    codesign --force --deep --sign - --identifier "com.myworkplanner.minitimer" "${APP_BUNDLE}"
+fi
+
+# 5. Install to user Applications directory and register with LaunchServices
+echo "--> Installing to ~/Applications/${APP_NAME}.app..."
+pkill -f "${APP_NAME}" || true
+rm -rf "${HOME}/Applications/${APP_NAME}.app"
+cp -R "${APP_BUNDLE}" "${HOME}/Applications/${APP_NAME}.app"
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "${HOME}/Applications/${APP_NAME}.app"
 
 echo "=== Build and packaging complete ==="
-echo "App bundle: ${APP_BUNDLE}"
+echo "App installed at: ${HOME}/Applications/${APP_NAME}.app"

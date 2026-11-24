@@ -1,3 +1,5 @@
+import { getAppBaseUrl } from './redirectUrl';
+
 export interface ClientEnvConfig {
   supabaseUrl: string | null;
   supabasePublishableKey: string | null;
@@ -30,14 +32,7 @@ export function getClientEnvConfig(): ClientEnvConfig {
       : undefined) ??
       (typeof process !== 'undefined' ? process.env?.VITE_SUPABASE_PUBLISHABLE_KEY : undefined)
   );
-  const appBaseUrl =
-    readEnvValue(
-      (typeof import.meta !== 'undefined' && import.meta.env
-        ? import.meta.env.VITE_APP_BASE_URL
-        : undefined) ??
-        (typeof process !== 'undefined' ? process.env?.VITE_APP_BASE_URL : undefined)
-    ) ??
-    (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+  const appBaseUrl = getAppBaseUrl();
 
   const vapidPublicKey = readEnvValue(
     (typeof import.meta !== 'undefined' && import.meta.env

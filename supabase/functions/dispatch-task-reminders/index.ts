@@ -7,6 +7,7 @@ import { buildPushPayload } from 'https://esm.sh/@block65/webcrypto-web-push@2.0
 import { corsHeaders } from '../_shared/cors.ts';
 
 interface PushPayload {
+  [key: string]: unknown;
   title: string;
   body: string;
   tag?: string;
@@ -74,6 +75,7 @@ serve(async (req: Request) => {
       try {
         const sub = {
           endpoint: subscription.endpoint,
+          expirationTime: null,
           keys: {
             p256dh: subscription.p256dh_key,
             auth: subscription.auth_key,
@@ -88,7 +90,7 @@ serve(async (req: Request) => {
 
         const pushData = await buildPushPayload(
           {
-            data: payload,
+            data: payload as any,
             options: { ttl: 86400, urgency: 'high' },
           },
           sub,

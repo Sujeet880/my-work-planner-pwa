@@ -47,8 +47,8 @@ public final class TimerService: ObservableObject {
                 self?.tickLocalTimer()
             }
 
-        // 2. 5-second background reconciliation polling with remote Supabase
-        pollTimer = Timer.publish(every: 5.0, on: .main, in: .common)
+        // 2. 10-second background reconciliation polling with remote Supabase
+        pollTimer = Timer.publish(every: 10.0, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self, self.supabase.isAuthenticated, !self.isMutating else { return }
@@ -89,52 +89,52 @@ public final class TimerService: ObservableObject {
             self.activeTimer = active
             self.timerStatus = active.status
 
-            // 2. Fetch associated task details
-            let task: TaskRecord = try await supabase.client
-                .from("tasks")
-                .select()
-                .eq("id", value: active.task_id)
-                .single()
-                .execute()
-                .value
-
-            self.currentTask = task
-
-            // 3. Fetch project details if assigned
-            if let projectId = task.project_id {
-                let project: ProjectRecord? = try? await supabase.client
-                    .from("projects")
+            // 2. Fetch associated task, project, and session details only when task changes
+            if self.currentTask?.id != active.task_id {
+                let task: TaskRecord = try await supabase.client
+                    .from("tasks")
                     .select()
-                    .eq("id", value: projectId)
+                    .eq("id", value: active.task_id)
                     .single()
                     .execute()
                     .value
-                self.currentProject = project
-            } else {
-                self.currentProject = nil
+
+                self.currentTask = task
+
+                if let projectId = task.project_id {
+                    let project: ProjectRecord? = try? await supabase.client
+                        .from("projects")
+                        .select()
+                        .eq("id", value: projectId)
+                        .single()
+                        .execute()
+                        .value
+                    self.currentProject = project
+                } else {
+                    self.currentProject = nil
+                }
+
+                let sessions: [WorkSessionRecord] = (try? await supabase.client
+                    .from("work_sessions")
+                    .select("id, duration_seconds")
+                    .eq("task_id", value: task.id)
+                    .execute()
+                    .value) ?? []
+
+                let totalSaved = sessions.reduce(0) { $0 + $1.duration_seconds }
+                self.savedSeconds = totalSaved
             }
 
-            // 4. Calculate saved work session seconds for this task
-            let sessions: [WorkSessionRecord] = (try? await supabase.client
-                .from("work_sessions")
-                .select("id, duration_seconds")
-                .eq("task_id", value: task.id)
-                .execute()
-                .value) ?? []
-
-            let totalSaved = sessions.reduce(0) { $0 + $1.duration_seconds }
-            self.savedSeconds = totalSaved
-
-            // 5. Compute live elapsed seconds
+            // 3. Compute live elapsed seconds
             if active.status == .running,
                let startedStr = active.segment_started_at,
                let startDate = parseIsoDate(startedStr) {
                 let elapsed = max(0, Int(Date().timeIntervalSince(startDate)))
                 self.activeElapsedSeconds = elapsed
-                self.liveTotalSeconds = totalSaved + elapsed
+                self.liveTotalSeconds = self.savedSeconds + elapsed
             } else {
                 self.activeElapsedSeconds = 0
-                self.liveTotalSeconds = totalSaved
+                self.liveTotalSeconds = self.savedSeconds
             }
 
             self.errorMessage = nil
@@ -236,5 +236,23 @@ public final class TimerService: ObservableObject {
         let minutes = (s % 3600) / 60
         let seconds = s % 60
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+
+    /// Adaptive time formatting for compact displays:
+    /// - Less than one hour: "34:59" (no leading 00: hours)
+    /// - One hour or more (<10h): "1:05:09" (single-digit hour)
+    /// - Multiple hours (>=10h): "12:45:09" (double-digit hour)
+    /// - Negative values clamped to "00:00"
+    public func formatAdaptiveTime(_ totalSeconds: Int) -> String {
+        let s = max(0, totalSeconds)
+        let hours = s / 3600
+        let minutes = (s % 3600) / 60
+        let seconds = s % 60
+
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
     }
 }

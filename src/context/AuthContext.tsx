@@ -1,9 +1,12 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { getClientEnvConfig, type ClientEnvConfig } from '../lib/env';
-import { getSupabaseBrowserClient } from '../lib/supabaseClient';
+import { getSupabaseBrowserClient, setRememberMePreference, getRememberMePreference } from '../lib/supabaseClient';
+import { getAuthCallbackUrl, getPasswordResetUrl } from '../lib/redirectUrl';
 import type { Profile } from '../types/models';
 import { validateEmailFormat } from '../lib/timeMath';
+
+export type UserWorkspaceRole = 'owner' | 'client' | 'unauthorized';
 
 export interface AuthContextValue {
   env: ClientEnvConfig;
@@ -16,16 +19,36 @@ export interface AuthContextValue {
   profile: Profile | null;
   userEmail: string | null;
   error: string | null;
+  userRole: UserWorkspaceRole | null;
+  isOwner: boolean;
+  isClient: boolean;
+  clientProjectCount: number;
+  signInWithPassword: (
+    email: string,
+    password: string,
+    rememberMe?: boolean
+  ) => Promise<{ success: boolean; role?: UserWorkspaceRole; error?: string }>;
   signInWithMagicLink: (
+    email: string,
+    redirectTo?: string,
+    rememberMe?: boolean
+  ) => Promise<{ success: boolean; error?: string }>;
+  resetPasswordForEmail: (
     email: string,
     redirectTo?: string
   ) => Promise<{ success: boolean; error?: string }>;
-  signOut: () => Promise<void>;
+  updatePassword: (
+    newPassword: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  signOut: (options?: { scope?: 'global' | 'local' | 'others' }) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshRole: () => Promise<void>;
   clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+const KNOWN_WORKSPACE_OWNER_EMAIL = 'ktsujeet1997@gmail.com';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const env = useMemo(() => getClientEnvConfig(), []);
@@ -34,6 +57,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [userRole, setUserRole] = useState<UserWorkspaceRole | null>(null);
+  const [clientProjectCount, setClientProjectCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(env.isSupabaseConfigured);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,11 +137,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Authoritative Role Resolution (Workspace Owner vs Client Portal Member vs Unauthorized)
+  const resolveUserRole = useCallback(
+    async (
+      userId: string,
+      email: string
+    ): Promise<{ role: UserWorkspaceRole; clientProjects: number }> => {
+      if (!supabase) return { role: 'unauthorized', clientProjects: 0 };
+      const normalizedEmail = email.trim().toLowerCase();
+
+      try {
+        // 1. Query public.workspace_roles (enforced by RLS)
+        const { data: roleRow } = await supabase
+          .from('workspace_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (roleRow?.role === 'owner') {
+          return { role: 'owner', clientProjects: 0 };
+        }
+
+        // 2. Check accepted project memberships
+        const { count: memberCount, error: memberErr } = await supabase
+          .from('project_members')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('membership_status', 'accepted');
+
+        const acceptedCount = !memberErr && typeof memberCount === 'number' ? memberCount : 0;
+
+        if (roleRow?.role === 'client' || acceptedCount > 0) {
+          return { role: 'client', clientProjects: acceptedCount };
+        }
+
+        // 3. Fallback: Known workspace owner account
+        if (normalizedEmail === KNOWN_WORKSPACE_OWNER_EMAIL.toLowerCase()) {
+          return { role: 'owner', clientProjects: 0 };
+        }
+
+        // 4. Fallback: Check if user owns any projects in the database
+        const { count: projectCount } = await supabase
+          .from('projects')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId);
+
+        if (projectCount && projectCount > 0) {
+          return { role: 'owner', clientProjects: 0 };
+        }
+
+        return { role: 'unauthorized', clientProjects: 0 };
+      } catch (err) {
+        console.warn('Role resolution failed:', err);
+        return { role: 'unauthorized', clientProjects: 0 };
+      }
+    },
+    [supabase]
+  );
+
   // Refresh profile action
   const refreshProfile = async () => {
     if (user) {
       const p = await fetchUserProfile(user.id, user.email || '');
       if (p) setProfile(p);
+    }
+  };
+
+  // Refresh role action
+  const refreshRole = async () => {
+    if (user) {
+      const { role, clientProjects } = await resolveUserRole(user.id, user.email || '');
+      setUserRole(role);
+      setClientProjectCount(clientProjects);
     }
   };
 
@@ -129,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let isMounted = true;
 
-    // A. Read persisted session from storage
+    // A. Read persisted session from dynamic storage adapter
     supabase.auth
       .getSession()
       .then(async ({ data: { session: initialSession }, error: sessionErr }) => {
@@ -145,13 +237,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(initialSession?.user ?? null);
 
         if (initialSession?.user) {
-          const userProf = await fetchUserProfile(
-            initialSession.user.id,
-            initialSession.user.email || ''
-          );
-          if (isMounted && userProf) {
-            setProfile(userProf);
+          const [userProf, roleInfo] = await Promise.all([
+            fetchUserProfile(initialSession.user.id, initialSession.user.email || ''),
+            resolveUserRole(initialSession.user.id, initialSession.user.email || ''),
+          ]);
+
+          if (isMounted) {
+            if (userProf) setProfile(userProf);
+            setUserRole(roleInfo.role);
+            setClientProjectCount(roleInfo.clientProjects);
           }
+        } else {
+          setUserRole(null);
+          setClientProjectCount(0);
         }
 
         setIsLoading(false);
@@ -174,18 +272,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         if (newSession?.user) {
-          const userProf = await fetchUserProfile(
-            newSession.user.id,
-            newSession.user.email || ''
-          );
-          if (isMounted && userProf) {
-            setProfile(userProf);
+          const [userProf, roleInfo] = await Promise.all([
+            fetchUserProfile(newSession.user.id, newSession.user.email || ''),
+            resolveUserRole(newSession.user.id, newSession.user.email || ''),
+          ]);
+
+          if (isMounted) {
+            if (userProf) setProfile(userProf);
+            setUserRole(roleInfo.role);
+            setClientProjectCount(roleInfo.clientProjects);
           }
         }
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
         setSession(null);
         setUser(null);
+        setUserRole(null);
+        setClientProjectCount(0);
       }
 
       setIsLoading(false);
@@ -195,12 +298,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase, env.isSupabaseConfigured]);
+  }, [supabase, env.isSupabaseConfigured, resolveUserRole]);
 
-  // 2. Email Magic Link Request (Passwordless OTP)
+  // 2. Email + Password Sign-In
+  const signInWithPassword = async (
+    email: string,
+    password: string,
+    rememberMe = true
+  ): Promise<{ success: boolean; role?: UserWorkspaceRole; error?: string }> => {
+    setError(null);
+
+    const validationErr = validateEmailFormat(email);
+    if (validationErr) {
+      setError(validationErr);
+      return { success: false, error: validationErr };
+    }
+
+    if (!password) {
+      const msg = 'Password is required.';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    if (!supabase || !env.isSupabaseConfigured) {
+      const msg = 'Supabase is not configured yet.';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    try {
+      setRememberMePreference(rememberMe);
+
+      const { data, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (signInErr) {
+        setError(signInErr.message);
+        return { success: false, error: signInErr.message };
+      }
+
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.user);
+        const [prof, roleInfo] = await Promise.all([
+          fetchUserProfile(data.user.id, data.user.email || ''),
+          resolveUserRole(data.user.id, data.user.email || ''),
+        ]);
+        if (prof) setProfile(prof);
+        setUserRole(roleInfo.role);
+        setClientProjectCount(roleInfo.clientProjects);
+
+        return { success: true, role: roleInfo.role };
+      }
+
+      return { success: true, role: 'owner' };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Sign in failed';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+  };
+
+  // 3. Email Magic Link Request (Passwordless OTP)
   const signInWithMagicLink = async (
     email: string,
-    redirectTo?: string
+    redirectTo?: string,
+    rememberMe = true
   ): Promise<{ success: boolean; error?: string }> => {
     setError(null);
 
@@ -212,13 +377,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!supabase || !env.isSupabaseConfigured) {
       const msg =
-        'Supabase is not configured yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env to enable Magic Link sign-in.';
+        'Supabase is not configured yet. Configure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env to enable Magic Link sign-in.';
       setError(msg);
       return { success: false, error: msg };
     }
 
     try {
-      const callbackUrl = redirectTo ?? `${env.appBaseUrl}/auth/callback`;
+      setRememberMePreference(rememberMe);
+      const callbackUrl = redirectTo ?? getAuthCallbackUrl();
+
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: email.trim().toLowerCase(),
         options: {
@@ -240,11 +407,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 3. Sign Out Action
-  const signOut = async () => {
+  // 4. Send Password Reset Email
+  const resetPasswordForEmail = async (
+    email: string,
+    redirectTo?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    setError(null);
+
+    const validationErr = validateEmailFormat(email);
+    if (validationErr) {
+      setError(validationErr);
+      return { success: false, error: validationErr };
+    }
+
+    if (!supabase || !env.isSupabaseConfigured) {
+      const msg = 'Supabase is not configured yet.';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    try {
+      const resetUrl = redirectTo ?? getPasswordResetUrl();
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+        { redirectTo: resetUrl }
+      );
+
+      if (resetErr) {
+        setError(resetErr.message);
+        return { success: false, error: resetErr.message };
+      }
+
+      return { success: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to send password reset email';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+  };
+
+  // 5. Update Password for Current User
+  const updatePassword = async (
+    newPassword: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    setError(null);
+
+    if (!newPassword || newPassword.length < 6) {
+      const msg = 'Password must be at least 6 characters.';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    if (!supabase || !env.isSupabaseConfigured) {
+      const msg = 'Supabase is not configured yet.';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    try {
+      const { error: updateErr } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateErr) {
+        setError(updateErr.message);
+        return { success: false, error: updateErr.message };
+      }
+
+      return { success: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update password';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+  };
+
+  // 6. Sign Out Action
+  const signOut = async (options?: { scope?: 'global' | 'local' | 'others' }) => {
     if (supabase) {
       try {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut(options);
       } catch (err) {
         console.warn('Sign-out error:', err);
       }
@@ -252,10 +494,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setUser(null);
     setProfile(null);
+    setUserRole(null);
+    setClientProjectCount(0);
     setError(null);
   };
 
   const clearError = () => setError(null);
+
+  const isOwner = userRole === 'owner';
+  const isClient = userRole === 'client';
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -269,12 +516,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       userEmail: user?.email ?? null,
       error,
+      userRole,
+      isOwner,
+      isClient,
+      clientProjectCount,
+      signInWithPassword,
       signInWithMagicLink,
+      resetPasswordForEmail,
+      updatePassword,
       signOut,
       refreshProfile,
+      refreshRole,
       clearError,
     }),
-    [env, session, user, profile, isLoading, error]
+    [
+      env,
+      session,
+      user,
+      profile,
+      isLoading,
+      error,
+      userRole,
+      isOwner,
+      isClient,
+      clientProjectCount,
+      resolveUserRole,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

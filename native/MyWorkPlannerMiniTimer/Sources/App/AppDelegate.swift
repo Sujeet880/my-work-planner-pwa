@@ -52,7 +52,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             .sink { [weak self] totalSeconds in
                 guard let self = self, let button = self.statusItem?.button else { return }
                 if TimerService.shared.timerStatus == .running {
-                    let formatted = TimerService.shared.formatTimeHHMMSS(totalSeconds)
+                    let formatted = TimerService.shared.formatAdaptiveTime(totalSeconds)
                     button.title = " \(formatted)"
                     button.image = NSImage(systemSymbolName: "timer", accessibilityDescription: "Running")
                 } else if TimerService.shared.timerStatus == .paused {
@@ -92,16 +92,18 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleURL(_ url: URL) {
-        if url.host == "auth" || url.path.contains("callback") {
+        if url.host == "auth" || url.path.contains("callback") || url.path.contains("auth") {
             Task {
                 let success = await SupabaseManager.shared.handleIncomingURL(url)
                 if success {
                     SignInWindowController.shared.close()
                     FloatingPanelManager.shared.showPanel()
+                    NSApp.activate(ignoringOtherApps: true)
                 }
             }
-        } else if url.host == "open" || url.path.contains("open") {
+        } else if url.host == "launch" || url.host == "open" || url.path.contains("launch") || url.path.contains("open") || url.scheme == "myworkplanner-minitimer" {
             FloatingPanelManager.shared.showPanel()
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 

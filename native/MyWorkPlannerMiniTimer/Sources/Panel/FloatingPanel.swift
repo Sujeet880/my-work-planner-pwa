@@ -20,6 +20,7 @@ public final class FloatingPanel: NSPanel {
         self.level = .floating
         self.hidesOnDeactivate = false
         self.becomesKeyOnlyIfNeeded = true
+        self.isMovable = true
         self.isMovableByWindowBackground = true
 
         // Multi-Space, Stage Manager & Fullscreen Application Support

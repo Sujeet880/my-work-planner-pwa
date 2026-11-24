@@ -15,6 +15,13 @@ export function mapProjectFromRow(row: ProjectRow): Project {
     description: row.description ?? undefined,
     color: row.color,
     isArchived: row.is_archived,
+    targetCompletionDate: row.target_completion_date,
+    clientShareEnabled: row.client_share_enabled ?? false,
+    clientViewTimeTracking: row.client_view_time_tracking ?? false,
+    clientViewRemainingEstimate: row.client_view_remaining_estimate ?? false,
+    clientViewTaskDates: row.client_view_task_dates ?? true,
+    clientAllowComments: row.client_allow_comments ?? true,
+    clientProjectStatus: (row.client_project_status as any) ?? 'on_track',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -26,6 +33,13 @@ export interface SaveProjectInput {
   description?: string;
   color: string;
   clientName?: string;
+  targetCompletionDate?: string | null;
+  clientShareEnabled?: boolean;
+  clientViewTimeTracking?: boolean;
+  clientViewRemainingEstimate?: boolean;
+  clientViewTaskDates?: boolean;
+  clientAllowComments?: boolean;
+  clientProjectStatus?: 'on_track' | 'at_risk' | 'delayed' | 'completed';
 }
 
 export const projectService = {
@@ -88,6 +102,13 @@ export const projectService = {
           description: input.description?.trim() || null,
           color: input.color || '#2F65F6',
           is_archived: false,
+          target_completion_date: input.targetCompletionDate || null,
+          client_share_enabled: input.clientShareEnabled ?? false,
+          client_view_time_tracking: input.clientViewTimeTracking ?? false,
+          client_view_remaining_estimate: input.clientViewRemainingEstimate ?? false,
+          client_view_task_dates: input.clientViewTaskDates ?? true,
+          client_allow_comments: input.clientAllowComments ?? true,
+          client_project_status: input.clientProjectStatus || 'on_track',
         })
         .select()
         .single();
@@ -127,15 +148,39 @@ export const projectService = {
     }
 
     try {
+      const updateData: Record<string, any> = {
+        name: trimmedName,
+        client_name: input.clientName?.trim() || null,
+        description: input.description?.trim() || null,
+        color: input.color,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (input.targetCompletionDate !== undefined) {
+        updateData.target_completion_date = input.targetCompletionDate || null;
+      }
+      if (input.clientShareEnabled !== undefined) {
+        updateData.client_share_enabled = input.clientShareEnabled;
+      }
+      if (input.clientViewTimeTracking !== undefined) {
+        updateData.client_view_time_tracking = input.clientViewTimeTracking;
+      }
+      if (input.clientViewRemainingEstimate !== undefined) {
+        updateData.client_view_remaining_estimate = input.clientViewRemainingEstimate;
+      }
+      if (input.clientViewTaskDates !== undefined) {
+        updateData.client_view_task_dates = input.clientViewTaskDates;
+      }
+      if (input.clientAllowComments !== undefined) {
+        updateData.client_allow_comments = input.clientAllowComments;
+      }
+      if (input.clientProjectStatus !== undefined) {
+        updateData.client_project_status = input.clientProjectStatus;
+      }
+
       const { data, error } = await supabase
         .from('projects')
-        .update({
-          name: trimmedName,
-          client_name: input.clientName?.trim() || null,
-          description: input.description?.trim() || null,
-          color: input.color,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData as any)
         .eq('id', projectId)
         .eq('user_id', userId)
         .select()

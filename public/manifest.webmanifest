@@ -1,7 +1,7 @@
 {
   "id": "/",
   "name": "My Work Planner",
-  "short_name": "Work Planner",
+  "short_name": "My Work Planner",
   "description": "Personal productivity, task planning, and accurate work time tracking Progressive Web App.",
   "start_url": "/",
   "scope": "/",

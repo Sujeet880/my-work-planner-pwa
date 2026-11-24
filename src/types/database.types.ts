@@ -14,6 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversation_reads: {
+        Row: {
+          id: string
+          user_id: string
+          project_id: string
+          task_id: string | null
+          last_read_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          project_id: string
+          task_id?: string | null
+          last_read_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          project_id?: string
+          task_id?: string | null
+          last_read_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      project_task_requests: {
+        Row: {
+          id: string
+          project_id: string
+          requested_by: string
+          title: string
+          description: string | null
+          reason: string | null
+          suggested_priority: 'low' | 'medium' | 'high' | 'urgent'
+          requested_due_date: string | null
+          status: 'submitted' | 'under_review' | 'needs_information' | 'approved' | 'rejected' | 'withdrawn'
+          owner_feedback: string | null
+          created_task_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          requested_by: string
+          title: string
+          description?: string | null
+          reason?: string | null
+          suggested_priority?: 'low' | 'medium' | 'high' | 'urgent'
+          requested_due_date?: string | null
+          status?: 'submitted' | 'under_review' | 'needs_information' | 'approved' | 'rejected' | 'withdrawn'
+          owner_feedback?: string | null
+          created_task_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          requested_by?: string
+          title?: string
+          description?: string | null
+          reason?: string | null
+          suggested_priority?: 'low' | 'medium' | 'high' | 'urgent'
+          requested_due_date?: string | null
+          status?: 'submitted' | 'under_review' | 'needs_information' | 'approved' | 'rejected' | 'withdrawn'
+          owner_feedback?: string | null
+          created_task_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      workspace_roles: {
+        Row: {
+          id: string
+          user_id: string
+          role: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          role: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          role?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       active_timers: {
         Row: {
           created_at: string
@@ -266,36 +374,252 @@ export type Database = {
       projects: {
         Row: {
           client_name: string | null
+          client_allow_comments: boolean
+          client_project_status: string
+          client_share_enabled: boolean
+          client_view_remaining_estimate: boolean
+          client_view_task_dates: boolean
+          client_view_time_tracking: boolean
           color: string
           created_at: string
           description: string | null
           id: string
           is_archived: boolean
           name: string
+          target_completion_date: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           client_name?: string | null
+          client_allow_comments?: boolean
+          client_project_status?: string
+          client_share_enabled?: boolean
+          client_view_remaining_estimate?: boolean
+          client_view_task_dates?: boolean
+          client_view_time_tracking?: boolean
           color?: string
           created_at?: string
           description?: string | null
           id?: string
           is_archived?: boolean
           name: string
+          target_completion_date?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           client_name?: string | null
+          client_allow_comments?: boolean
+          client_project_status?: string
+          client_share_enabled?: boolean
+          client_view_remaining_estimate?: boolean
+          client_view_task_dates?: boolean
+          client_view_time_tracking?: boolean
           color?: string
           created_at?: string
           description?: string | null
           id?: string
           is_archived?: boolean
           name?: string
+          target_completion_date?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      project_members: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invited_at: string
+          invited_by: string
+          invited_email: string
+          membership_status: string
+          project_id: string
+          role: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string
+          invited_by: string
+          invited_email: string
+          membership_status?: string
+          project_id: string
+          role?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string
+          invited_email?: string
+          membership_status?: string
+          project_id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      project_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          invited_by: string
+          invited_email: string
+          project_id: string
+          revoked_at: string | null
+          role: string
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          invited_by: string
+          invited_email: string
+          project_id: string
+          revoked_at?: string | null
+          role?: string
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          invited_email?: string
+          project_id?: string
+          revoked_at?: string | null
+          role?: string
+          token_hash?: string
+        }
+        Relationships: []
+      }
+      project_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          parent_comment_id: string | null
+          project_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          task_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          parent_comment_id?: string | null
+          project_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          task_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          parent_comment_id?: string | null
+          project_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          task_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      project_updates: {
+        Row: {
+          author_id: string
+          created_at: string
+          id: string
+          message: string
+          progress_snapshot: number | null
+          project_id: string
+          status: string
+          target_completion_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          id?: string
+          message: string
+          progress_snapshot?: number | null
+          project_id: string
+          status?: string
+          target_completion_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          progress_snapshot?: number | null
+          project_id?: string
+          status?: string
+          target_completion_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      project_notifications: {
+        Row: {
+          body: string
+          comment_id: string | null
+          created_at: string
+          id: string
+          notification_type: string
+          project_id: string
+          read_at: string | null
+          recipient_user_id: string
+          title: string
+        }
+        Insert: {
+          body: string
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          notification_type: string
+          project_id: string
+          read_at?: string | null
+          recipient_user_id: string
+          title: string
+        }
+        Update: {
+          body?: string
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          notification_type?: string
+          project_id?: string
+          read_at?: string | null
+          recipient_user_id?: string
+          title?: string
         }
         Relationships: []
       }
@@ -385,6 +709,7 @@ export type Database = {
       tasks: {
         Row: {
           calendar_sync_status: string
+          client_visible: boolean
           completed_at: string | null
           created_at: string
           description: string | null
@@ -393,6 +718,7 @@ export type Database = {
           planned_duration_minutes: number | null
           priority: string
           project_id: string | null
+          remaining_estimate_minutes: number | null
           reminder_offset_minutes: number | null
           scheduled_date: string | null
           scheduled_start_time: string | null
@@ -405,6 +731,7 @@ export type Database = {
         }
         Insert: {
           calendar_sync_status?: string
+          client_visible?: boolean
           completed_at?: string | null
           created_at?: string
           description?: string | null
@@ -413,6 +740,7 @@ export type Database = {
           planned_duration_minutes?: number | null
           priority?: string
           project_id?: string | null
+          remaining_estimate_minutes?: number | null
           reminder_offset_minutes?: number | null
           scheduled_date?: string | null
           scheduled_start_time?: string | null
@@ -425,6 +753,7 @@ export type Database = {
         }
         Update: {
           calendar_sync_status?: string
+          client_visible?: boolean
           completed_at?: string | null
           created_at?: string
           description?: string | null
@@ -433,6 +762,7 @@ export type Database = {
           planned_duration_minutes?: number | null
           priority?: string
           project_id?: string | null
+          remaining_estimate_minutes?: number | null
           reminder_offset_minutes?: number | null
           scheduled_date?: string | null
           scheduled_start_time?: string | null
@@ -548,6 +878,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      rpc_approve_task_request: {
+        Args: {
+          p_request_id: string
+          p_title: string
+          p_description?: string
+          p_scheduled_date?: string
+          p_scheduled_start_time?: string
+          p_planned_duration_minutes?: number
+          p_priority?: string
+          p_client_visible?: boolean
+        }
+        Returns: {
+          success: boolean
+          task_id?: string
+          error?: string
+        }
+      }
       cancel_task_reminder: { Args: { p_task_id: string }; Returns: boolean }
       disconnect_google_calendar: { Args: never; Returns: boolean }
       get_calendar_integration_status: { Args: never; Returns: Json }

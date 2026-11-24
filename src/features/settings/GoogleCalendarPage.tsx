@@ -7,20 +7,9 @@ import {
   Calendar,
   CalendarCheck,
   CalendarOff,
-  Check,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Copy,
-  ExternalLink,
-  Globe,
-  Info,
-  Key,
   Lock,
   RefreshCw,
-  ShieldCheck,
-  Terminal,
   Unlink,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -31,7 +20,6 @@ import { Modal } from '../../components/ui/Modal';
 
 export function GoogleCalendarPage() {
   const {
-    profile,
     calendarConnection,
     refreshCalendarStatus,
     retryCalendarSync,
@@ -50,11 +38,6 @@ export function GoogleCalendarPage() {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
-  const [copiedUri, setCopiedUri] = useState(false);
-  const [showSetupHelp, setShowSetupHelp] = useState(true);
-
-  const redirectUri =
-    'https://tefxkrigwvyiescuctmb.supabase.co/functions/v1/google-calendar-auth/callback';
 
   // Handle URL query parameters from OAuth callback redirect
   const connectedParam = searchParams.get('connected');
@@ -158,12 +141,6 @@ export function GoogleCalendarPage() {
     }
   };
 
-  const handleCopyRedirectUri = () => {
-    navigator.clipboard.writeText(redirectUri);
-    setCopiedUri(true);
-    setTimeout(() => setCopiedUri(false), 2500);
-  };
-
   const isConnected =
     !isVerifying &&
     calendarConnection.isConnected &&
@@ -173,7 +150,7 @@ export function GoogleCalendarPage() {
 
   return (
     <div className="space-y-7 max-w-4xl mx-auto">
-      {/* Breadcrumb */}
+      {/* Breadcrumb: Settings -> Integrations -> Google Calendar */}
       <div className="flex items-center gap-2 text-sm text-[#7E8B9B]">
         <Link
           to="/settings"
@@ -183,7 +160,9 @@ export function GoogleCalendarPage() {
           <span>Settings</span>
         </Link>
         <span>/</span>
-        <span className="font-semibold text-[#1A1F2C]">Google Calendar Integration</span>
+        <span className="text-[#7E8B9B]">Integrations</span>
+        <span>/</span>
+        <span className="font-semibold text-[#1A1F2C]">Google Calendar</span>
       </div>
 
       {/* Verification in Progress Banner */}
@@ -260,7 +239,7 @@ export function GoogleCalendarPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 1. PRIMARY CONNECTION CARD (Hero) */}
+      {/* PRIMARY CONNECTION & SYNCHRONIZATION CONTROLS */}
       {/* ========================================================================= */}
       <section className="rounded-[28px] border border-white/80 bg-white/85 p-6 sm:p-8 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl">
         {/* Top Header Row with Status Badge */}
@@ -315,12 +294,11 @@ export function GoogleCalendarPage() {
         </div>
 
         {/* --------------------------------------------------------------------- */}
-        {/* DISCONNECTED STATE: PROMINENT PRIMARY CTA & EXPLANATION */}
+        {/* DISCONNECTED STATE: PROMINENT CTA */}
         {/* --------------------------------------------------------------------- */}
         {!isConnected && (
           <div className="pt-7 text-center sm:text-left">
             <div className="flex flex-col items-center sm:items-start max-w-xl">
-              {/* Primary Prominent CTA Button */}
               <button
                 type="button"
                 onClick={handleConnect}
@@ -340,13 +318,11 @@ export function GoogleCalendarPage() {
                 )}
               </button>
 
-              {/* Simple Explanation Below CTA */}
               <p className="mt-3.5 text-sm font-medium text-[#7E8B9B] text-center sm:text-left leading-relaxed">
                 Connect your Google account to automatically add your scheduled My Work Planner
                 tasks to Google Calendar.
               </p>
 
-              {/* Unauthenticated / Preview Mode Notice */}
               {!isAuthenticated && (
                 <div className="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl border border-[#B7791F]/20 bg-[#FEF3E2] p-3.5 text-xs text-[#B7791F]">
                   <div className="flex items-center gap-2">
@@ -354,8 +330,7 @@ export function GoogleCalendarPage() {
                     <span>You are in Preview Mode. Sign in to connect your live Google account.</span>
                   </div>
                   <Link
-                    to="/auth"
-                    state={{ from: { pathname: '/settings/google-calendar' } }}
+                    to="/sign-in"
                     className="inline-flex items-center gap-1 rounded-full bg-[#B7791F] px-3 py-1 font-semibold text-white hover:bg-[#975A16] transition-colors"
                   >
                     Sign In
@@ -364,12 +339,10 @@ export function GoogleCalendarPage() {
               )}
             </div>
 
-            {/* Strict One-Way Synchronization Banner */}
             <div className="mt-7 flex items-start gap-3 rounded-2xl border border-[#2F65F6]/20 bg-[#EDF2FE]/60 p-4 text-xs leading-relaxed text-[#1A1F2C]">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#2F65F6]" />
               <div>
                 <p className="font-bold text-[#1A1F2C]">
-                  One-Way Synchronization: My Work Planner → Google Calendar
+                  One-Way Synchronization Policy
                 </p>
                 <p className="mt-1 text-[#7E8B9B]">
                   My Work Planner is your authoritative source of truth. Scheduled tasks are pushed
@@ -482,212 +455,6 @@ export function GoogleCalendarPage() {
                 <p className="mt-1 text-[#7E8B9B]">
                   Scheduled tasks in My Work Planner are automatically synchronized to your Google
                   Calendar. Task completion preserves events without modifying your calendar.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 2. SCHEDULED TASK MAPPING RULES */}
-      {/* ========================================================================= */}
-      <section className="rounded-[28px] border border-white/80 bg-white/85 p-6 sm:p-7 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl">
-        <h2 className="text-base font-bold text-[#1A1F2C]">Scheduled Task Mapping Rules</h2>
-        <ul className="mt-4 space-y-3.5 text-xs text-[#7E8B9B]">
-          <li className="flex items-start gap-3">
-            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#2F65F6]" />
-            <span>
-              <strong className="font-semibold text-[#1A1F2C]">Case A — Date Only:</strong> Created
-              as an <strong>all-day event</strong> with an exclusive next-day end date.
-            </span>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#2F65F6]" />
-            <span>
-              <strong className="font-semibold text-[#1A1F2C]">
-                Case B &amp; C — Date + Start Time + Planned Duration:
-              </strong>{' '}
-              Created as a <strong>timed event</strong> spanning exactly from start time to start
-              time + planned duration.
-            </span>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#2F65F6]" />
-            <span>
-              <strong className="font-semibold text-[#1A1F2C]">
-                Case B &amp; D — Date + Start Time (No Duration):
-              </strong>{' '}
-              Created as a <strong>timed event</strong> using your default event duration (
-              <strong className="text-[#1A1F2C]">
-                {profile.defaultEventDurationMinutes || 60} minutes
-              </strong>
-              ).
-            </span>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#2F65F6]" />
-            <span>
-              <strong className="font-semibold text-[#1A1F2C]">
-                Case E — Inbox Tasks (No Scheduled Date):
-              </strong>{' '}
-              Unscheduled tasks remain in your Inbox and are <strong>never</strong> synchronized to
-              Google Calendar.
-            </span>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#16845B]" />
-            <span>
-              <strong className="font-semibold text-[#1A1F2C]">Task Completion:</strong> Completing
-              a task <strong>preserves</strong> its calendar event in Google Calendar without
-              altering its title or schedule.
-            </span>
-          </li>
-        </ul>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 3. TIMEZONE & DURATION PREFERENCES */}
-      {/* ========================================================================= */}
-      <section className="rounded-[28px] border border-white/80 bg-white/85 p-6 sm:p-7 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl">
-        <h2 className="text-base font-bold text-[#1A1F2C]">Timezone &amp; Duration Preferences</h2>
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="flex items-center justify-between rounded-2xl border border-[#E9ECF5] bg-[#F8FAFD] p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EDF2FE] text-[#2F65F6]">
-                <Globe className="h-4 w-4" />
-              </div>
-              <div>
-                <span className="text-xs font-semibold text-[#1A1F2C]">Calendar Timezone</span>
-                <p className="text-[11px] text-[#7E8B9B]">Applied to timed Google Calendar events</p>
-              </div>
-            </div>
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#2F65F6] border border-[#E9ECF5]">
-              {profile.timezone || 'Asia/Kolkata'}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between rounded-2xl border border-[#E9ECF5] bg-[#F8FAFD] p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EDF2FE] text-[#2F65F6]">
-                <Clock className="h-4 w-4" />
-              </div>
-              <div>
-                <span className="text-xs font-semibold text-[#1A1F2C]">Default Duration</span>
-                <p className="text-[11px] text-[#7E8B9B]">When task has no planned duration</p>
-              </div>
-            </div>
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#2F65F6] border border-[#E9ECF5]">
-              {profile.defaultEventDurationMinutes || 60}m
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 4. SECONDARY SETUP INSTRUCTIONS (5 Required Secrets & OAuth Scopes) */}
-      {/* ========================================================================= */}
-      <section className="rounded-[28px] border border-white/80 bg-white/85 p-6 sm:p-7 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl">
-        <button
-          type="button"
-          onClick={() => setShowSetupHelp((prev) => !prev)}
-          className="flex w-full items-center justify-between text-left cursor-pointer"
-        >
-          <div className="flex items-start gap-3.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EDF2FE] text-[#2F65F6]">
-              <Key className="h-4 w-4" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-[#1A1F2C]">
-                Google Cloud &amp; Server Secrets Configuration
-              </h2>
-              <p className="mt-0.5 text-xs text-[#7E8B9B]">
-                Secondary Reference: 5 required Edge Function secrets, redirect URI, and OAuth scopes
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#2F65F6]">
-            <span>{showSetupHelp ? 'Hide Guide' : 'Show Guide'}</span>
-            {showSetupHelp ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </div>
-        </button>
-
-        {showSetupHelp && (
-          <div className="mt-6 space-y-4 text-xs pt-4 border-t border-[#E9ECF5]/80">
-            {/* Step 1: Authorized Redirect URI */}
-            <div className="rounded-2xl border border-[#E9ECF5] bg-[#F8FAFD] p-4">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-[#1A1F2C]">
-                  1. Authorized Redirect URI (Google Cloud Console)
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCopyRedirectUri}
-                  className="flex items-center gap-1 text-[11px] font-bold text-[#2F65F6] hover:text-[#2554DB] transition-colors cursor-pointer"
-                >
-                  {copiedUri ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  <span>{copiedUri ? 'Copied' : 'Copy URI'}</span>
-                </button>
-              </div>
-              <p className="mt-1 text-[11px] text-[#7E8B9B]">
-                Add this exact URL to <strong>Authorized redirect URIs</strong> in your Google Cloud
-                OAuth 2.0 Web Client:
-              </p>
-              <code className="mt-2 block break-all rounded-xl bg-white p-2.5 font-mono text-[11px] text-[#1A1F2C] border border-[#E9ECF5]">
-                {redirectUri}
-              </code>
-            </div>
-
-            {/* Step 2: Supabase Secrets CLI command with ALL 5 SECRETS */}
-            <div className="rounded-2xl border border-[#E9ECF5] bg-[#F8FAFD] p-4">
-              <div className="flex items-center gap-2 font-semibold text-[#1A1F2C]">
-                <Terminal className="h-4 w-4 text-[#2F65F6]" />
-                <span>2. Configure Supabase Edge Function Secrets (All 5 Required)</span>
-              </div>
-              <p className="mt-1 text-[#7E8B9B]">
-                Configure all five required environment secrets in Supabase Edge Functions:
-              </p>
-              <pre className="mt-2.5 overflow-x-auto rounded-xl bg-[#1A1F2C] p-3.5 text-[11px] text-white/90 font-mono leading-relaxed">
-{`npx supabase secrets set \\
-  GOOGLE_CLIENT_ID="<your-google-client-id>" \\
-  GOOGLE_CLIENT_SECRET="<your-google-client-secret>" \\
-  GOOGLE_REDIRECT_URI="${redirectUri}" \\
-  ENCRYPTION_KEY="<32-byte-hex-or-random-string>" \\
-  APP_BASE_URL="http://localhost:3000"`}
-              </pre>
-              <div className="mt-2 text-[11px] text-[#7E8B9B] space-y-1">
-                <p>
-                  <strong>Secret Names:</strong> <code>GOOGLE_CLIENT_ID</code>,{' '}
-                  <code>GOOGLE_CLIENT_SECRET</code>, <code>GOOGLE_REDIRECT_URI</code>,{' '}
-                  <code>ENCRYPTION_KEY</code>, <code>APP_BASE_URL</code>.
-                </p>
-                <p>
-                  <strong>Encryption Key Format:</strong> Accepts any UTF-8 string (e.g. generated
-                  via <code>openssl rand -hex 32</code>). The crypto implementation in{' '}
-                  <code>_shared/crypto.ts</code> hashes this string via SHA-256 to derive a 256-bit
-                  AES-GCM key used to encrypt OAuth refresh and access tokens.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 3: Google OAuth Scopes (Both calendar.events and userinfo.email) */}
-            <div className="flex items-start gap-2.5 rounded-2xl border border-[#2F65F6]/20 bg-[#EDF2FE]/50 p-4 text-[#1A1F2C]">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#2F65F6]" />
-              <div>
-                <span className="font-semibold">OAuth Consent Screen Scopes (Both Required):</span>
-                <ul className="mt-1 space-y-1 list-disc list-inside text-[#7E8B9B]">
-                  <li>
-                    <code>https://www.googleapis.com/auth/calendar.events</code> — Push scheduled
-                    tasks as calendar events.
-                  </li>
-                  <li>
-                    <code>https://www.googleapis.com/auth/userinfo.email</code> — Identify connected
-                    Google account identity.
-                  </li>
-                </ul>
-                <p className="mt-2 text-[11px] text-[#7E8B9B]">
-                  If your Google Cloud OAuth Consent screen is in <em>Testing</em> mode, ensure your
-                  Google account email is added as an <strong>Authorized Test User</strong>.
                 </p>
               </div>
             </div>

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Archive, Bell, FolderKanban, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Archive, Bell, FolderKanban, Pencil, Plus, RotateCcw, Share2, Trash2 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { calculateSavedWorkSeconds, formatDuration } from '../../lib/timeMath';
 import type { Project } from '../../types/models';
+import { ClientProjectStatusBadge } from '../../components/ui/Badges';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { FieldWrapper, Input, Textarea } from '../../components/ui/Field';
 import { Modal } from '../../components/ui/Modal';
+import { ShareProjectModal } from '../../components/sharing/ShareProjectModal';
 
 const COLOR_OPTIONS = [
   { hex: '#2F65F6', label: 'Electric Blue' },
@@ -24,6 +27,7 @@ export function ProjectsPage() {
   const [showArchived, setShowArchived] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [sharingProject, setSharingProject] = useState<Project | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState('#2F65F6');
@@ -169,12 +173,25 @@ export function ProjectsPage() {
                         style={{ backgroundColor: project.color }}
                         aria-hidden="true"
                       />
-                      <h2 className="truncate text-lg font-semibold text-[#1A1F2C]">
+                      <Link
+                        to={`/projects/${project.id}`}
+                        className="truncate text-lg font-semibold text-[#1A1F2C] hover:text-[#2F65F6] transition-colors"
+                      >
                         {project.name}
-                      </h2>
+                      </Link>
+                      <ClientProjectStatusBadge status={project.clientProjectStatus} />
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        aria-label={`Share ${project.name}`}
+                        onClick={() => setSharingProject(project)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[#16845B] hover:bg-[#EAF7EE] transition-colors"
+                        title="Share project with client"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </button>
                       <button
                         type="button"
                         aria-label={`Edit ${project.name}`}
@@ -325,6 +342,15 @@ export function ProjectsPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Share Project Modal */}
+      {sharingProject && (
+        <ShareProjectModal
+          isOpen={Boolean(sharingProject)}
+          onClose={() => setSharingProject(null)}
+          project={sharingProject}
+        />
+      )}
     </div>
   );
 }

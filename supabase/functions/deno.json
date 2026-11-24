@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window", "deno.ns"]
+  },
+  "lint": {
+    "rules": {
+      "exclude": [
+        "no-import-prefix",
+        "no-explicit-any",
+        "require-await",
+        "no-inner-declarations"
+      ]
+    }
+  }
+}

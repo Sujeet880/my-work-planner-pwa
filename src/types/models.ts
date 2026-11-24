@@ -62,9 +62,17 @@ export interface Project {
   id: string;
   userId: string;
   name: string;
+  clientName?: string | null;
   description?: string;
   color: string;
   isArchived: boolean;
+  targetCompletionDate?: string | null;
+  clientShareEnabled?: boolean;
+  clientViewTimeTracking?: boolean;
+  clientViewRemainingEstimate?: boolean;
+  clientViewTaskDates?: boolean;
+  clientAllowComments?: boolean;
+  clientProjectStatus?: 'on_track' | 'at_risk' | 'delayed' | 'completed';
   createdAt: string;
   updatedAt: string;
 }
@@ -80,9 +88,11 @@ export interface Task {
   scheduledDate: string | null; // YYYY-MM-DD or null (Inbox)
   scheduledStartTime: string | null; // HH:mm or null (requires scheduledDate)
   plannedDurationMinutes: number | null; // Positive integer or null
+  remainingEstimateMinutes?: number | null;
   reminderOffsetMinutes: number | null; // e.g., 15, 30, 60, or null
   syncToGoogleCalendar: boolean;
   calendarSyncStatus: CalendarSyncStatus;
+  clientVisible?: boolean;
   completedAt: string | null;
   isArchived: boolean;
   createdAt: string;
@@ -133,12 +143,15 @@ export interface TaskFormValues {
   description: string;
   projectId: string | null;
   priority: TaskPriority;
+  status?: TaskStatus;
   scheduledDate: string;
   scheduledStartTime: string;
   plannedDurationMinutes: string;
+  remainingEstimateMinutes?: string;
   reminderOffsetMinutes: string;
   reminderCustomTime?: string;
   syncToGoogleCalendar: boolean;
+  clientVisible?: boolean;
 }
 
 export interface ManualTimeEntryInput {

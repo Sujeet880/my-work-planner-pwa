@@ -228,6 +228,11 @@ serve(async (req: Request) => {
       );
     }
 
+    const userClient = createClient(supabaseUrl, supabaseAnonKey || supabaseServiceKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false },
+    });
+
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
     const action = body.action || url.searchParams.get('action');
 

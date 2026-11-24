@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
-  Calendar,
   CheckSquare,
   ChevronDown,
   Home,
+  Inbox,
   Layers,
   LogIn,
   Menu,
@@ -14,16 +14,18 @@ import {
   Plus,
   Search,
   Settings,
+  Shield,
   Square,
   Timer,
   X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { discussionService } from '../../services/discussionService';
 import { formatClockHHMMSS, getLocalDateISO } from '../../lib/timeMath';
 import { OfflineIndicator } from '../pwa/OfflineIndicator';
 import { PWAInstallButton } from '../pwa/PWAInstallButton';
-import { TaskFormDrawer } from '../tasks/TaskFormDrawer';
+import { TaskFormModal } from '../tasks/TaskFormModal';
 import { ManualTimeEntryModal } from '../timer/ManualTimeEntryModal';
 import { TimerConfirmationModals } from '../timer/TimerConfirmationModals';
 import { Button } from '../ui/Button';
@@ -32,9 +34,9 @@ const PRIMARY_NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
   { to: '/tasks', label: 'My Tasks', icon: CheckSquare },
   { to: '/projects', label: 'Projects', icon: Layers },
+  { to: '/inbox', label: 'Inbox', icon: Inbox, showUnread: true },
   { to: '/time-tracker', label: 'Time Tracker', icon: Timer },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
-  { to: '/settings/google-calendar', label: 'Calendar', icon: Calendar },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -72,7 +74,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const userInitial = (userDisplayName || 'W')[0].toUpperCase();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const location = useLocation();
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await discussionService.getUnreadNotificationCount();
+        if (isMounted && res.data !== null) {
+          setInboxUnreadCount(res.data);
+        }
+      } catch {
+        // Safe silent catch
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [user?.id]);
 
   const todayIso = getLocalDateISO();
   const todayPendingCount = tasks.filter(
@@ -90,24 +114,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (to === '/projects') {
       return path === '/projects' || path.startsWith('/projects/');
     }
+    if (to === '/inbox') {
+      return path === '/inbox' || path === '/client-inbox';
+    }
     if (to === '/time-tracker') {
       return path === '/time-tracker' || path.startsWith('/time-tracker/');
     }
     if (to === '/reports') {
       return path === '/reports' || path.startsWith('/reports/');
     }
-    if (to === '/settings/google-calendar') {
-      return (
-        path === '/settings/google-calendar' ||
-        path.startsWith('/settings/google-calendar/') ||
-        path === '/calendar'
-      );
-    }
     if (to === '/settings') {
-      return (
-        path === '/settings' ||
-        (path.startsWith('/settings/') && !path.startsWith('/settings/google-calendar'))
-      );
+      return path === '/settings' || path.startsWith('/settings/');
     }
     return path === to;
   };
@@ -160,10 +177,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   />
                   <span className="truncate">{item.label}</span>
                 </span>
+
+                {item.to === '/inbox' && inboxUnreadCount > 0 && (
+                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#2F65F6] px-1.5 text-[10px] font-bold text-white shadow-xs">
+                    {inboxUnreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}
         </nav>
+
+        {/* Client Portal Link */}
+        <div className="mt-4 pt-3 border-t border-[#E9ECF5]/80">
+          <Link
+            to="/portal"
+            onClick={onNavigate}
+            className="flex items-center justify-between rounded-xl px-3.5 py-2 text-xs font-semibold text-[#7E8B9B] hover:bg-white/70 hover:text-[#2F65F6] transition-all"
+          >
+            <span className="flex items-center gap-2.5">
+              <Shield className="h-4 w-4 text-[#2F65F6]" />
+              <span>Client Portal</span>
+            </span>
+            <span className="text-[10px] bg-[#EDF2FE] text-[#2F65F6] px-2 py-0.5 rounded-full font-bold">
+              Shared
+            </span>
+          </Link>
+        </div>
       </div>
 
       {/* Dynamic Profile Card at bottom */}
@@ -349,8 +389,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
 
-      {/* Global Drawers & Modals */}
-      <TaskFormDrawer />
+      {/* Global Modals */}
+      <TaskFormModal />
       <ManualTimeEntryModal />
       <TimerConfirmationModals />
 

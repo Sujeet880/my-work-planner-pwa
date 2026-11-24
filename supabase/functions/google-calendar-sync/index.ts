@@ -15,6 +15,46 @@ import {
   type GoogleEventPayload,
 } from '../_shared/google.ts';
 
+interface SyncJobRow {
+  id: string;
+  user_id: string;
+  task_id: string | null;
+  google_calendar_id: string | null;
+  google_event_id: string | null;
+  operation: 'upsert' | 'delete';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  retry_count: number;
+  max_retries: number;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface EventMappingRow {
+  id: string;
+  user_id: string;
+  task_id: string;
+  google_calendar_id: string;
+  google_event_id: string;
+  sync_status: string;
+  last_synced_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface DbTaskRow {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  scheduled_date: string | null;
+  scheduled_start_time: string | null;
+  planned_duration_minutes: number | null;
+  is_archived: boolean;
+  calendar_sync_status: string | null;
+  sync_to_google_calendar: boolean | null;
+}
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -132,15 +172,24 @@ serve(async (req: Request) => {
       );
 
       const googleEvents = await listGoogleCalendarEvents(access_token, 'primary');
-      const { data: dbTasks } = await adminClient.from('tasks').select('*').eq('user_id', targetUserId);
-      const { data: dbMappings } = await adminClient
+      const { data: rawDbTasks } = await adminClient.from('tasks').select('*').eq('user_id', targetUserId);
+      const { data: rawDbMappings } = await adminClient
         .from('google_calendar_event_mappings')
         .select('*')
         .eq('user_id', targetUserId);
 
-      const mappingByEventId = new Map(dbMappings?.map((m) => [m.google_event_id, m]) || []);
-      const mappingByTaskId = new Map(dbMappings?.map((m) => [m.task_id, m]) || []);
-      const taskById = new Map(dbTasks?.map((t) => [t.id, t]) || []);
+      const dbTasks = (rawDbTasks as DbTaskRow[]) || [];
+      const dbMappings = (rawDbMappings as EventMappingRow[]) || [];
+
+      const mappingByEventId = new Map<string, EventMappingRow>(
+        dbMappings.map((m) => [m.google_event_id, m])
+      );
+      const mappingByTaskId = new Map<string, EventMappingRow>(
+        dbMappings.map((m) => [m.task_id, m])
+      );
+      const taskById = new Map<string, DbTaskRow>(
+        dbTasks.map((t) => [t.id, t])
+      );
 
       const classified = googleEvents.map((ev) => {
         const mapping = mappingByEventId.get(ev.id);
@@ -239,13 +288,15 @@ serve(async (req: Request) => {
       jobsQuery = jobsQuery.eq('user_id', callingUserId);
     }
 
-    const { data: jobs, error: jobsError } = await jobsQuery;
+    const { data: rawJobs, error: jobsError } = await jobsQuery;
 
     if (jobsError) {
       throw new Error(`Failed to query sync jobs: ${jobsError.message}`);
     }
 
-    if (!jobs || jobs.length === 0) {
+    const jobs = (rawJobs as SyncJobRow[]) || [];
+
+    if (jobs.length === 0) {
       return new Response(
         JSON.stringify({ success: true, processedCount: 0, message: 'No pending sync jobs' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -253,7 +304,7 @@ serve(async (req: Request) => {
     }
 
     // Group jobs by user_id to cache and reuse tokens efficiently
-    const jobsByUser: Record<string, typeof jobs> = {};
+    const jobsByUser: Record<string, SyncJobRow[]> = {};
     for (const job of jobs) {
       if (!jobsByUser[job.user_id]) {
         jobsByUser[job.user_id] = [];
@@ -417,12 +468,14 @@ serve(async (req: Request) => {
               continue;
             }
 
-            const { data: freshTask } = await adminClient
+            const { data: rawFreshTask } = await adminClient
               .from('tasks')
               .select('*')
               .eq('id', job.task_id)
               .eq('user_id', userId)
               .maybeSingle();
+
+            const freshTask = rawFreshTask as DbTaskRow | null;
 
             // If task no longer exists in database, do not create or update remote event
             if (!freshTask) {
@@ -504,13 +557,14 @@ serve(async (req: Request) => {
             }
 
             // Deterministic Google Event ID based on canonical Task UUID (RFC2938 base32hex: [a-v0-9])
-            const deterministicEventId = `mwp${job.task_id.replace(/-/g, '').toLowerCase()}`;
+            const taskId = job.task_id as string;
+            const deterministicEventId = `mwp${taskId.replace(/-/g, '').toLowerCase()}`;
 
             const extendedPayload: GoogleEventPayload = {
               ...eventPayload,
               extendedProperties: {
                 private: {
-                  myWorkPlannerTaskId: job.task_id,
+                  myWorkPlannerTaskId: taskId,
                   myWorkPlannerUserId: userId,
                 },
               },

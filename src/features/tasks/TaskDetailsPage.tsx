@@ -27,6 +27,7 @@ import {
 } from '../../lib/timeMath';
 import {
   CalendarSyncBadge,
+  ClientVisibilityBadge,
   EntryTypeBadge,
   PriorityBadge,
   ReminderBadge,
@@ -35,6 +36,7 @@ import {
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Modal } from '../../components/ui/Modal';
+import { ProjectDiscussionsView } from '../../components/discussions/ProjectDiscussionsView';
 
 export function TaskDetailsPage() {
   const { taskId } = useParams<{ taskId: string }>();
@@ -190,6 +192,7 @@ export function TaskDetailsPage() {
               />
               <PriorityBadge priority={task.priority} />
               <ReminderBadge offsetMinutes={task.reminderOffsetMinutes} />
+              <ClientVisibilityBadge clientVisible={task.clientVisible} />
               {project && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EDF2FE] px-2.5 py-0.5 text-xs font-semibold text-[#2F65F6]">
                   <Folder className="h-3 w-3" />
@@ -233,11 +236,19 @@ export function TaskDetailsPage() {
                 <dd className="mt-1 font-semibold text-[#1A1F2C]">
                   {task.reminderOffsetMinutes !== null
                     ? task.reminderOffsetMinutes === 0
-                      ? 'At start time'
-                      : `${task.reminderOffsetMinutes}m before`
+                    ? 'At start time'
+                    : `${task.reminderOffsetMinutes}m before`
                     : 'None'}
                 </dd>
               </div>
+              {task.remainingEstimateMinutes !== null && task.remainingEstimateMinutes !== undefined && (
+                <div>
+                  <dt className="text-xs font-medium text-[#7E8B9B]">Remaining Estimate</dt>
+                  <dd className="mt-1 font-semibold text-[#1A1F2C] tabular-nums-strict">
+                    {task.remainingEstimateMinutes} min
+                  </dd>
+                </div>
+              )}
             </dl>
           </section>
 
@@ -309,6 +320,25 @@ export function TaskDetailsPage() {
               </div>
             )}
           </section>
+
+          {/* Task Discussion Card */}
+          {project && (
+            <section className="rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl">
+              <div className="mb-4">
+                <h2 className="text-base font-bold text-[#1A1F2C]">Task Discussion &amp; Feedback</h2>
+                <p className="mt-0.5 text-xs text-[#7E8B9B]">
+                  Leave notes, updates, or questions for this specific task.
+                </p>
+              </div>
+              <ProjectDiscussionsView
+                projectId={project.id}
+                projectOwnerId={project.userId}
+                currentUserId={task.userId}
+                taskId={task.id}
+                allowComments={project.clientAllowComments ?? true}
+              />
+            </section>
+          )}
         </div>
 
         {/* Right Column (~35%): Timer Control, Planned vs Actual, Calendar */}

@@ -30,6 +30,8 @@ export function mapTaskFromRow(row: TaskRow): Task {
     reminderOffsetMinutes: row.reminder_offset_minutes,
     syncToGoogleCalendar: row.sync_to_google_calendar,
     calendarSyncStatus: row.calendar_sync_status as CalendarSyncStatus,
+    clientVisible: row.client_visible ?? false,
+    remainingEstimateMinutes: row.remaining_estimate_minutes,
     completedAt: row.completed_at,
     isArchived: row.is_archived,
     createdAt: row.created_at,
@@ -101,6 +103,10 @@ export const taskService = {
       ? parseInt(values.reminderOffsetMinutes, 10) || null
       : null;
 
+    const remainingEstimate = values.remainingEstimateMinutes?.trim()
+      ? Math.max(0, parseInt(values.remainingEstimateMinutes, 10) || 0)
+      : null;
+
     const shouldSyncCalendar = values.syncToGoogleCalendar ?? Boolean(scheduledDate);
 
     try {
@@ -116,9 +122,11 @@ export const taskService = {
           scheduled_date: scheduledDate,
           scheduled_start_time: scheduledStartTime,
           planned_duration_minutes: plannedMinutes,
+          remaining_estimate_minutes: remainingEstimate,
           reminder_offset_minutes: reminderOffset,
           sync_to_google_calendar: shouldSyncCalendar,
           calendar_sync_status: shouldSyncCalendar && scheduledDate ? 'pending' : 'not_synced',
+          client_visible: values.projectId ? Boolean(values.clientVisible) : false,
           completed_at: null,
           is_archived: false,
           sort_order: 0,
@@ -197,23 +205,43 @@ export const taskService = {
       ? parseInt(values.reminderOffsetMinutes, 10) || null
       : null;
 
+    const remainingEstimate = values.remainingEstimateMinutes !== undefined
+      ? (values.remainingEstimateMinutes.trim() ? Math.max(0, parseInt(values.remainingEstimateMinutes, 10) || 0) : null)
+      : undefined;
+
     const shouldSyncCalendar = values.syncToGoogleCalendar ?? Boolean(scheduledDate);
 
     try {
+      const updatePayload: Record<string, any> = {
+        title: trimmedTitle,
+        description: values.description.trim() || null,
+        project_id: values.projectId || null,
+        priority: values.priority,
+        scheduled_date: scheduledDate,
+        scheduled_start_time: scheduledStartTime,
+        planned_duration_minutes: plannedMinutes,
+        reminder_offset_minutes: reminderOffset,
+        sync_to_google_calendar: shouldSyncCalendar,
+        client_visible: values.projectId ? Boolean(values.clientVisible) : false,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (values.status) {
+        updatePayload.status = values.status;
+        if (values.status === 'completed') {
+          updatePayload.completed_at = new Date().toISOString();
+        } else {
+          updatePayload.completed_at = null;
+        }
+      }
+
+      if (remainingEstimate !== undefined) {
+        updatePayload.remaining_estimate_minutes = remainingEstimate;
+      }
+
       const { data, error } = await supabase
         .from('tasks')
-        .update({
-          title: trimmedTitle,
-          description: values.description.trim() || null,
-          project_id: values.projectId || null,
-          priority: values.priority,
-          scheduled_date: scheduledDate,
-          scheduled_start_time: scheduledStartTime,
-          planned_duration_minutes: plannedMinutes,
-          reminder_offset_minutes: reminderOffset,
-          sync_to_google_calendar: shouldSyncCalendar,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload as any)
         .eq('id', taskId)
         .eq('user_id', userId)
         .select()

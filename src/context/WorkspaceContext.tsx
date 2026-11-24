@@ -79,13 +79,17 @@ export interface WorkspaceContextValue {
   isLoadingData: boolean;
   refreshData: () => Promise<void>;
 
-  // Drawers & Modals
+  // Drawers & Modals (TaskFormModal)
   taskDrawerOpen: boolean;
+  taskModalOpen: boolean;
   editingTask: Task | null;
   taskDrawerDefaultDate: string | null;
   openCreateTaskDrawer: (defaultDate?: string | null) => void;
+  openCreateTaskModal: (defaultDate?: string | null) => void;
   openEditTaskDrawer: (task: Task) => void;
+  openEditTaskModal: (task: Task) => void;
   closeTaskDrawer: () => void;
+  closeTaskModal: () => void;
 
   manualEntryModalOpen: boolean;
   manualEntryDefaultTaskId: string | null;
@@ -662,6 +666,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       if (existingTaskId) {
         const prevTask = tasks.find((t) => t.id === existingTaskId);
+        const taskStatus = values.status || prevTask?.status || 'todo';
         const updatedTask: Task = {
           id: existingTaskId,
           userId: currentUserId,
@@ -669,14 +674,18 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           title: values.title.trim(),
           description: values.description.trim() || undefined,
           priority: values.priority,
-          status: prevTask?.status || 'todo',
+          status: taskStatus,
           scheduledDate,
           scheduledStartTime,
           plannedDurationMinutes: plannedMinutes,
+          remainingEstimateMinutes: values.remainingEstimateMinutes?.trim()
+            ? Math.max(0, parseInt(values.remainingEstimateMinutes, 10) || 0)
+            : (prevTask?.remainingEstimateMinutes ?? null),
           reminderOffsetMinutes: reminderOffset,
           syncToGoogleCalendar: shouldSync,
           calendarSyncStatus: shouldSync ? 'pending' : 'not_synced',
-          completedAt: prevTask?.completedAt || null,
+          clientVisible: values.projectId ? Boolean(values.clientVisible) : false,
+          completedAt: taskStatus === 'completed' ? (prevTask?.completedAt || nowIso) : null,
           isArchived: prevTask?.isArchived || false,
           createdAt: prevTask?.createdAt || nowIso,
           updatedAt: nowIso,
@@ -710,14 +719,18 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         title: values.title.trim(),
         description: values.description.trim() || undefined,
         priority: values.priority,
-        status: 'todo',
+        status: values.status || 'todo',
         scheduledDate,
         scheduledStartTime,
         plannedDurationMinutes: plannedMinutes,
+        remainingEstimateMinutes: values.remainingEstimateMinutes?.trim()
+          ? Math.max(0, parseInt(values.remainingEstimateMinutes, 10) || 0)
+          : null,
         reminderOffsetMinutes: reminderOffset,
         syncToGoogleCalendar: shouldSync,
         calendarSyncStatus: shouldSync ? 'pending' : 'not_synced',
-        completedAt: null,
+        clientVisible: values.projectId ? Boolean(values.clientVisible) : false,
+        completedAt: values.status === 'completed' ? nowIso : null,
         isArchived: false,
         createdAt: nowIso,
         updatedAt: nowIso,
@@ -1234,11 +1247,15 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       isLoadingData,
       refreshData,
       taskDrawerOpen,
+      taskModalOpen: taskDrawerOpen,
       editingTask,
       taskDrawerDefaultDate,
       openCreateTaskDrawer,
+      openCreateTaskModal: openCreateTaskDrawer,
       openEditTaskDrawer,
+      openEditTaskModal: openEditTaskDrawer,
       closeTaskDrawer,
+      closeTaskModal: closeTaskDrawer,
       manualEntryModalOpen,
       manualEntryDefaultTaskId,
       openManualEntryModal,

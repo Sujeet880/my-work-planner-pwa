@@ -4,10 +4,22 @@ import Security
 public final class KeychainManager: @unchecked Sendable {
     public static let shared = KeychainManager()
     private let service = "com.myworkplanner.minitimer"
+    public var isMockMode: Bool = false
+    private var mockStore: [String: Data] = [:]
+    private let lock = NSLock()
 
-    private init() {}
+    public init(isMockMode: Bool = false) {
+        self.isMockMode = isMockMode
+    }
 
     public func save(key: String, data: Data) -> Bool {
+        if isMockMode {
+            lock.lock()
+            defer { lock.unlock() }
+            mockStore[key] = data
+            return true
+        }
+
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -22,6 +34,12 @@ public final class KeychainManager: @unchecked Sendable {
     }
 
     public func load(key: String) -> Data? {
+        if isMockMode {
+            lock.lock()
+            defer { lock.unlock() }
+            return mockStore[key]
+        }
+
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -39,6 +57,13 @@ public final class KeychainManager: @unchecked Sendable {
     }
 
     public func delete(key: String) -> Bool {
+        if isMockMode {
+            lock.lock()
+            defer { lock.unlock() }
+            mockStore.removeValue(forKey: key)
+            return true
+        }
+
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

@@ -4,6 +4,61 @@ import { getClientEnvConfig, type ClientEnvConfig } from './env';
 
 let cachedClient: SupabaseClient<Database> | null = null;
 
+const REMEMBER_ME_STORAGE_KEY = 'my_work_planner_remember_me';
+export const AUTH_TOKEN_STORAGE_KEY = 'my_work_planner_auth_token';
+
+/**
+ * Persists the user's "Remember Me" preference.
+ */
+export function setRememberMePreference(remember: boolean): void {
+  if (typeof window === 'undefined') return;
+  if (remember) {
+    localStorage.setItem(REMEMBER_ME_STORAGE_KEY, 'true');
+    sessionStorage.removeItem(REMEMBER_ME_STORAGE_KEY);
+  } else {
+    localStorage.removeItem(REMEMBER_ME_STORAGE_KEY);
+    sessionStorage.setItem(REMEMBER_ME_STORAGE_KEY, 'false');
+  }
+}
+
+/**
+ * Reads the current "Remember Me" preference (defaults to true).
+ */
+export function getRememberMePreference(): boolean {
+  if (typeof window === 'undefined') return true;
+  if (sessionStorage.getItem(REMEMBER_ME_STORAGE_KEY) === 'false') return false;
+  return localStorage.getItem(REMEMBER_ME_STORAGE_KEY) !== 'false';
+}
+
+/**
+ * Storage adapter dynamically respecting the "Remember Me" choice.
+ * When Remember Me is enabled: persists to localStorage.
+ * When Remember Me is disabled: stores strictly in sessionStorage (cleared on browser quit).
+ */
+const dynamicAuthStorage = {
+  getItem: (key: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    return getRememberMePreference()
+      ? localStorage.getItem(key) ?? sessionStorage.getItem(key)
+      : sessionStorage.getItem(key) ?? localStorage.getItem(key);
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window === 'undefined') return;
+    if (getRememberMePreference()) {
+      localStorage.setItem(key, value);
+      sessionStorage.removeItem(key);
+    } else {
+      sessionStorage.setItem(key, value);
+      localStorage.removeItem(key);
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  },
+};
+
 /**
  * Validates the current Vite environment configuration for Supabase.
  * Strictly checks for VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.
@@ -38,6 +93,8 @@ export function getSupabaseBrowserClient(): SupabaseClient<Database> | null {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        storageKey: AUTH_TOKEN_STORAGE_KEY,
+        storage: dynamicAuthStorage,
       },
     });
   }
