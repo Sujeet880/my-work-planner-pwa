@@ -221,10 +221,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let isMounted = true;
 
-    // A. Read persisted session from dynamic storage adapter
-    supabase.auth
-      .getSession()
-      .then(async ({ data: { session: initialSession }, error: sessionErr }) => {
+    // Safety timeout: Ensure isLoading is never stuck true if network hangs on startup or offline
+    const safetyTimeoutId = setTimeout(() => {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    }, 3000);
+
+    const hydrateInitialSession = async () => {
+      try {
+        const { data: { session: initialSession }, error: sessionErr } = await supabase.auth.getSession();
         if (!isMounted) return;
 
         if (sessionErr) {
@@ -237,12 +243,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(initialSession?.user ?? null);
 
         if (initialSession?.user) {
-          const [userProf, roleInfo] = await Promise.all([
+          // Wrap profile and role resolution in a 2-second timeout race so offline startup doesn't stall UI
+          const fetchRoleAndProfilePromise = Promise.all([
             fetchUserProfile(initialSession.user.id, initialSession.user.email || ''),
             resolveUserRole(initialSession.user.id, initialSession.user.email || ''),
           ]);
 
-          if (isMounted) {
+          const timeoutPromise = new Promise<{ isTimeout: true }>((resolve) =>
+            setTimeout(() => resolve({ isTimeout: true }), 2000)
+          );
+
+          const result = await Promise.race([fetchRoleAndProfilePromise, timeoutPromise]);
+
+          if (isMounted && !('isTimeout' in result)) {
+            const [userProf, roleInfo] = result;
             if (userProf) setProfile(userProf);
             setUserRole(roleInfo.role);
             setClientProjectCount(roleInfo.clientProjects);
@@ -251,15 +265,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUserRole(null);
           setClientProjectCount(0);
         }
-
-        setIsLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (isMounted) {
           setError(err instanceof Error ? err.message : 'Session initialization failed');
+        }
+      } finally {
+        if (isMounted) {
+          clearTimeout(safetyTimeoutId);
           setIsLoading(false);
         }
-      });
+      }
+    };
+
+    hydrateInitialSession();
 
     // B. Subscribe to auth state changes (sign-in, token refresh, sign-out)
     const {
@@ -272,15 +290,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         if (newSession?.user) {
-          const [userProf, roleInfo] = await Promise.all([
-            fetchUserProfile(newSession.user.id, newSession.user.email || ''),
-            resolveUserRole(newSession.user.id, newSession.user.email || ''),
-          ]);
+          try {
+            const [userProf, roleInfo] = await Promise.all([
+              fetchUserProfile(newSession.user.id, newSession.user.email || ''),
+              resolveUserRole(newSession.user.id, newSession.user.email || ''),
+            ]);
 
-          if (isMounted) {
-            if (userProf) setProfile(userProf);
-            setUserRole(roleInfo.role);
-            setClientProjectCount(roleInfo.clientProjects);
+            if (isMounted) {
+              if (userProf) setProfile(userProf);
+              setUserRole(roleInfo.role);
+              setClientProjectCount(roleInfo.clientProjects);
+            }
+          } catch (err) {
+            console.warn('Auth state change resolution note:', err);
           }
         }
       } else if (event === 'SIGNED_OUT') {
@@ -296,6 +318,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimeoutId);
       subscription.unsubscribe();
     };
   }, [supabase, env.isSupabaseConfigured, resolveUserRole]);

@@ -47,6 +47,12 @@ if (typeof window !== 'undefined') {
       }
     });
   });
+
+  // Handle Vite chunk load failures after new production deployments
+  window.addEventListener('vite:preloadError', (event) => {
+    console.warn('Vite preload error detected, reloading to obtain fresh application bundle:', event);
+    window.location.reload();
+  });
 }
 
 /**

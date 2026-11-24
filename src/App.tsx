@@ -2,7 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
 import { AppShell } from './components/layout/AppShell';
-import { ProtectedRoute, OwnerRoute, ClientPortalRoute } from './components/auth/ProtectedRoute';
+import { ProtectedRoute, OwnerRoute, ClientPortalRoute, LoadingScreen } from './components/auth/ProtectedRoute';
 import { SignInPage } from './features/auth/SignInPage';
 import { AuthCallbackPage } from './features/auth/AuthCallbackPage';
 import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
@@ -32,7 +32,7 @@ function RootRedirect() {
   const { isAuthenticated, isOwner, isClient, isLoading } = useAuth();
 
   if (isLoading) {
-    return null;
+    return <LoadingScreen label="Loading My Work Planner..." sublabel="Initializing your workspace" />;
   }
 
   if (!isAuthenticated) {

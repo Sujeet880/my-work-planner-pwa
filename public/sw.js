@@ -1,9 +1,17 @@
 // My Work Planner — Service Worker (App Shell & Web Push Notifications)
-// Handles static shell metadata caching and background Web Push notifications.
+// Handles static shell metadata caching, resilient offline support, and background Web Push notifications.
 // Never caches private Supabase data or auth sessions.
 
-const CACHE_NAME = 'mwp-shell-v2';
-const SHELL_ASSETS = ['/', '/manifest.webmanifest', '/icon.svg'];
+const CACHE_NAME = 'mwp-shell-v3';
+const SHELL_ASSETS = [
+  '/',
+  '/manifest.webmanifest',
+  '/icon.svg',
+  '/apple-touch-icon.png',
+  '/pwa-192x192.png',
+  '/pwa-512x512.png',
+  '/pwa-maskable-512x512.png',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -25,6 +33,12 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
@@ -35,9 +49,56 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first strategy for navigation & static assets so users get fresh builds
+  // 1. Navigation requests (HTML documents): Network-first with cached shell fallback
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('/', copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match('/').then((cached) => cached || caches.match('/index.html')))
+    );
+    return;
+  }
+
+  // 2. Static bundled assets (/assets/*): Cache-first with network fallback and caching
+  // CRITICAL: Never fall back to index.html for JS/CSS assets, as that causes syntax errors.
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const copy = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            }
+            return networkResponse;
+          });
+      })
+    );
+    return;
+  }
+
+  // 3. Other static shell resources (manifest, icons): Stale-while-revalidate
   event.respondWith(
-    fetch(request).catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
+    caches.match(request).then((cached) => {
+      const fetchPromise = fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(() => null);
+
+      return cached || fetchPromise;
+    })
   );
 });
 

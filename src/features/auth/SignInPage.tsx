@@ -91,6 +91,12 @@ export function SignInPage() {
     if (emailParam) {
       setEmail(emailParam);
     }
+    const modeParam = searchParams.get('mode');
+    if (modeParam === 'magic_link') {
+      setAuthMode('magic_link');
+    } else if (modeParam === 'password') {
+      setAuthMode('password');
+    }
     if (isPasswordResetSuccess) {
       setAuthMode('password');
     }

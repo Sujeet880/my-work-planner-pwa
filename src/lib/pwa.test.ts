@@ -48,4 +48,27 @@ describe('PWA Installation & Platform Detection', () => {
     // After unsubscribe, nothing throws
     assert.doesNotThrow(() => unsubscribe());
   });
+
+  it('validates Service Worker architecture and assets manifest', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const swPath = path.resolve(process.cwd(), 'public/sw.js');
+    const swContent = fs.readFileSync(swPath, 'utf-8');
+
+    // Asserts cache version has been bumped
+    assert.ok(swContent.includes("const CACHE_NAME = 'mwp-shell-v3'"));
+
+    // Asserts navigation requests are separated from subresource requests
+    assert.ok(swContent.includes("request.mode === 'navigate'"));
+
+    // Asserts static assets under /assets/ are explicitly protected from returning index.html
+    assert.ok(swContent.includes("url.pathname.startsWith('/assets/')"));
+    assert.ok(!swContent.includes("url.pathname.startsWith('/assets/') && caches.match('/')"));
+
+    // Asserts manifest exists and contains standalone display mode
+    const manifestPath = path.resolve(process.cwd(), 'public/manifest.webmanifest');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+    assert.equal(manifest.display, 'standalone');
+    assert.equal(manifest.start_url, '/');
+  });
 });

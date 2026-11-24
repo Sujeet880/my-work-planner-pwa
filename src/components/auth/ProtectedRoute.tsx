@@ -142,7 +142,7 @@ export function ClientPortalRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LoadingScreen({ label, sublabel }: { label: string; sublabel: string }) {
+export function LoadingScreen({ label, sublabel }: { label: string; sublabel: string }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#F4F7FD] bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(59,102,245,0.12),rgba(255,255,255,0))] p-4">
       <div className="flex flex-col items-center text-center">
