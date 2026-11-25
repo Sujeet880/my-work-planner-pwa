@@ -184,7 +184,7 @@ export function TaskRow({
           </div>
         </div>
 
-        {!isCompleted && (
+        {!isCompleted && !task.isArchived && (
           <button
             type="button"
             onClick={() => (isRunning ? onPauseTimer() : onStartTimer(task.id))}

@@ -137,10 +137,12 @@ export function TaskDetailsPage() {
   const completedHours = (completedMinutes / 60).toFixed(1).replace(/\.0$/, '') + 'h';
   const remainingHours = (remainingMinutes / 60).toFixed(1).replace(/\.0$/, '') + 'h';
 
-  const handleConfirmArchive = () => {
-    archiveTask(task.id, true);
-    setConfirmDeleteOpen(false);
-    navigate('/tasks');
+  const handleConfirmArchive = async () => {
+    const ok = await archiveTask(task.id, true);
+    if (ok) {
+      setConfirmDeleteOpen(false);
+      navigate('/tasks');
+    }
   };
 
   return (
@@ -662,7 +664,7 @@ export function TaskDetailsPage() {
             <div className="flex items-start gap-2">
               <CalendarX2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#2F65F6]" />
               <span>
-                <strong>Calendar cleanup:</strong> All scheduled calendar time blocks allocated for this task will be removed.
+                <strong>Calendar cleanup:</strong> Future scheduled calendar time blocks allocated for this task will be removed, while historical calendar records remain intact.
               </span>
             </div>
             <div className="flex items-start gap-2">

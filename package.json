@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx --test src/lib/timeMath.test.ts src/lib/authConfig.test.ts src/lib/pwa.test.ts src/services/dataIntegration.test.ts src/services/timerService.test.ts src/services/timerIntegration.test.ts src/services/reportService.test.ts src/services/calendarService.test.ts src/services/reminderService.test.ts src/services/workOverview.test.ts src/services/sharingService.test.ts src/services/discussionService.test.ts src/services/authAndRoles.test.ts src/services/collaborationFlow.test.ts src/services/nativeTimerService.test.ts src/services/schedulingEngine.test.ts src/services/multiDayTask.test.ts"
+    "test": "tsx --test src/lib/timeMath.test.ts src/lib/authConfig.test.ts src/lib/pwa.test.ts src/services/dataIntegration.test.ts src/services/timerService.test.ts src/services/timerIntegration.test.ts src/services/reportService.test.ts src/services/calendarService.test.ts src/services/reminderService.test.ts src/services/workOverview.test.ts src/services/sharingService.test.ts src/services/discussionService.test.ts src/services/authAndRoles.test.ts src/services/collaborationFlow.test.ts src/services/nativeTimerService.test.ts src/services/schedulingEngine.test.ts src/services/multiDayTask.test.ts src/services/archiveLifecycle.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.2",

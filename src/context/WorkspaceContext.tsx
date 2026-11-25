@@ -3,7 +3,9 @@ import { getSupabaseBrowserClient } from '../lib/supabaseClient';
 import { useAuth } from './AuthContext';
 import {
   calculateActiveSessionSeconds,
+  getDateTimeInTimezone,
   getLocalDateISO,
+  isFutureCalendarBlock,
 } from '../lib/timeMath';
 import { projectService, type SaveProjectInput } from '../services/projectService';
 import { taskService } from '../services/taskService';
@@ -123,7 +125,7 @@ export interface WorkspaceContextValue {
   // Task actions
   saveTask: (values: TaskFormValues, existingTaskId?: string) => Promise<Task | null>;
   toggleTaskCompletion: (taskId: string) => void;
-  archiveTask: (taskId: string, explicitArchived?: boolean) => Promise<void> | void;
+  archiveTask: (taskId: string, explicitArchived?: boolean) => Promise<boolean>;
   deleteTask: (taskId: string) => void;
   scheduleTaskToDate: (taskId: string, dateIso: string | null) => void;
 
@@ -242,7 +244,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           setProjects(projectsRes.data);
         }
 
-        if (blocksRes.data) {
+        if (blocksRes.error) {
+          showToast(`Could not load calendar blocks: ${blocksRes.error}`, 'warning');
+        } else if (blocksRes.data) {
           setCalendarBlocks(blocksRes.data);
         }
 
@@ -306,10 +310,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const currentUserId = user?.id || profile.id;
     if (!currentUserId) return;
     const res = await taskService.fetchCalendarBlocks(currentUserId);
-    if (res.data) {
+    if (res.error) {
+      showToast(`Could not load calendar blocks: ${res.error}`, 'warning');
+    } else if (res.data) {
       setCalendarBlocks(res.data);
     }
-  }, [profile.id, user?.id]);
+  }, [profile.id, showToast, user?.id]);
 
   const refreshData = useCallback(async () => {
     if (user?.id) {
@@ -718,6 +724,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       if (existingTaskId) {
         const prevTask = tasks.find((t) => t.id === existingTaskId);
+        const prevBlocks = [...calendarBlocks];
         const taskStatus = values.status || prevTask?.status || 'todo';
         const updatedTask: Task = {
           id: existingTaskId,
@@ -748,7 +755,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
         setTasks((prev) => prev.map((t) => (t.id === existingTaskId ? updatedTask : t)));
 
-        // Optimistically update calendar blocks
+        // Optimistically update scheduled calendar blocks (preserve completed historical records)
         if (scheduledDate) {
           const plan = calculateSchedulePlan({
             startDate: scheduledDate,
@@ -757,24 +764,33 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             preferredStartTime: scheduledStartTime || '09:00',
             includeWeekends,
           });
-          const optimisticBlocks: TaskCalendarBlock[] = plan.blocks.map((b, idx) => ({
-            id: `temp-block-${existingTaskId}-${idx}-${Date.now()}`,
-            userId: currentUserId,
-            taskId: existingTaskId,
-            blockDate: b.date,
-            startTime: b.startTime,
-            endTime: b.endTime,
-            durationMinutes: b.durationMinutes,
-            status: 'scheduled',
-            createdAt: nowIso,
-            updatedAt: nowIso,
-          }));
+          const completedDates = new Set(
+            calendarBlocks
+              .filter((b) => b.taskId === existingTaskId && b.status === 'completed')
+              .map((b) => b.blockDate)
+          );
+          const optimisticBlocks: TaskCalendarBlock[] = plan.blocks
+            .filter((b) => !completedDates.has(b.date))
+            .map((b, idx) => ({
+              id: `temp-block-${existingTaskId}-${idx}-${Date.now()}`,
+              userId: currentUserId,
+              taskId: existingTaskId,
+              blockDate: b.date,
+              startTime: b.startTime,
+              endTime: b.endTime,
+              durationMinutes: b.durationMinutes,
+              status: 'scheduled',
+              createdAt: nowIso,
+              updatedAt: nowIso,
+            }));
           setCalendarBlocks((prev) => [
-            ...prev.filter((b) => b.taskId !== existingTaskId),
+            ...prev.filter((b) => b.taskId !== existingTaskId || b.status === 'completed'),
             ...optimisticBlocks,
           ]);
         } else {
-          setCalendarBlocks((prev) => prev.filter((b) => b.taskId !== existingTaskId));
+          setCalendarBlocks((prev) =>
+            prev.filter((b) => b.taskId !== existingTaskId || b.status === 'completed')
+          );
         }
 
         if (isAuthenticated && user?.id) {
@@ -784,6 +800,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             if (prevTask) {
               setTasks((prev) => prev.map((t) => (t.id === existingTaskId ? prevTask : t)));
             }
+            setCalendarBlocks(prevBlocks);
             return null;
           } else if (res.data) {
             setTasks((prev) => prev.map((t) => (t.id === existingTaskId ? res.data! : t)));
@@ -866,11 +883,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       showToast('Task created.', 'success');
       return newTask;
     },
-    [isAuthenticated, profile.id, refreshCalendarBlocks, showToast, tasks, user?.id]
+    [calendarBlocks, isAuthenticated, profile.id, refreshCalendarBlocks, showToast, tasks, user?.id]
   );
 
   const toggleTaskCompletion = useCallback(
-    (taskId: string) => {
+    async (taskId: string) => {
       const target = tasks.find((t) => t.id === taskId);
       if (!target) return;
 
@@ -882,6 +899,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       const nextStatus = target.status === 'completed' ? 'todo' : 'completed';
       const nowIso = new Date().toISOString();
+      const prevBlocks = [...calendarBlocks];
 
       setTasks((prev) =>
         prev.map((t) =>
@@ -896,15 +914,27 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         )
       );
 
+      if (nextStatus === 'completed') {
+        setCalendarBlocks((prev) =>
+          prev.map((b) =>
+            b.taskId === taskId && b.status === 'scheduled'
+              ? { ...b, status: 'completed', updatedAt: nowIso }
+              : b
+          )
+        );
+      }
+
       if (isAuthenticated && user?.id) {
-        taskService.toggleTaskCompletion(user.id, taskId, target.status).then((res) => {
-          if (res.error) {
-            showToast(`Error updating status: ${res.error}`, 'warning');
-            setTasks((prev) => prev.map((t) => (t.id === taskId ? target : t)));
-          } else if (res.data) {
-            setTasks((prev) => prev.map((t) => (t.id === taskId ? res.data! : t)));
-          }
-        });
+        const res = await taskService.toggleTaskCompletion(user.id, taskId, target.status);
+        if (res.error) {
+          showToast(`Error updating status: ${res.error}`, 'warning');
+          setTasks((prev) => prev.map((t) => (t.id === taskId ? target : t)));
+          setCalendarBlocks(prevBlocks);
+          return;
+        } else if (res.data) {
+          setTasks((prev) => prev.map((t) => (t.id === taskId ? res.data! : t)));
+          await refreshCalendarBlocks();
+        }
       }
 
       showToast(
@@ -912,7 +942,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         'success'
       );
     },
-    [activeTimer, isAuthenticated, showToast, tasks, user?.id]
+    [activeTimer, calendarBlocks, isAuthenticated, refreshCalendarBlocks, showToast, tasks, user?.id]
   );
 
   const confirmStopSaveAndComplete = useCallback(() => {
@@ -978,15 +1008,21 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [activeTimer, isAuthenticated, pendingCompleteWithTimer, profile.id, showToast, tasks, timeEntries, user?.id]);
 
   const archiveTask = useCallback(
-    async (taskId: string, explicitArchived?: boolean) => {
+    async (taskId: string, explicitArchived?: boolean): Promise<boolean> => {
       const target = tasks.find((t) => t.id === taskId);
-      if (!target) return;
+      if (!target) return false;
       const nextArchived = explicitArchived !== undefined ? explicitArchived : !target.isArchived;
 
       // If active timer is running on this task, safely stop and save it first
       if (activeTimer?.taskId === taskId) {
         await stopAndSaveActiveTimer();
       }
+
+      const prevTasks = [...tasks];
+      const prevBlocks = [...calendarBlocks];
+      const now = new Date();
+      const timezone = profile.timezone;
+      const { dateIso: todayIso } = getDateTimeInTimezone(now, timezone);
 
       setTasks((prev) =>
         prev.map((t) =>
@@ -995,30 +1031,94 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       );
 
       if (nextArchived) {
-        setCalendarBlocks((prev) => prev.filter((b) => b.taskId !== taskId));
+        // Optimistically remove ONLY future scheduled blocks using user timezone & block start_time;
+        // historical blocks (past dates, earlier today, completed) remain preserved
+        setCalendarBlocks((prev) =>
+          prev.filter((b) => !(b.taskId === taskId && isFutureCalendarBlock(b, now, timezone)))
+        );
+      } else {
+        // Optimistically restore future blocks only for active scheduled tasks
+        if (target.status !== 'completed' && target.scheduledDate) {
+          const taskEndDate = target.scheduledEndDate || target.scheduledDate;
+          if (taskEndDate >= todayIso) {
+            const effectiveStartDate = target.scheduledDate < todayIso ? todayIso : target.scheduledDate;
+            const plan = calculateSchedulePlan({
+              startDate: effectiveStartDate,
+              endDate: taskEndDate,
+              dailyPlannedHours: target.dailyPlannedMinutes
+                ? target.dailyPlannedMinutes / 60
+                : target.plannedDurationMinutes
+                ? target.plannedDurationMinutes / 60
+                : 1,
+              preferredStartTime: target.scheduledStartTime || '09:00',
+              includeWeekends: target.includeWeekends,
+              existingTasks: tasks.filter((t) => !t.isArchived && t.id !== taskId),
+              existingBlocks: calendarBlocks,
+              excludeTaskId: taskId,
+            });
+
+            const existingDates = new Set(
+              calendarBlocks.filter((b) => b.taskId === taskId).map((b) => b.blockDate)
+            );
+
+            const newBlocks: TaskCalendarBlock[] = plan.blocks
+              .filter(
+                (b) =>
+                  !existingDates.has(b.date) &&
+                  isFutureCalendarBlock(
+                    { blockDate: b.date, startTime: b.startTime, status: 'scheduled' },
+                    now,
+                    timezone
+                  )
+              )
+              .map((b) => ({
+                id: `opt-block-${taskId}-${b.date}`,
+                userId: target.userId,
+                taskId: target.id,
+                blockDate: b.date,
+                startTime: b.startTime,
+                endTime: b.endTime,
+                durationMinutes: b.durationMinutes,
+                status: 'scheduled',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              }));
+
+            if (newBlocks.length > 0) {
+              setCalendarBlocks((prev) => [...prev, ...newBlocks]);
+            }
+          }
+        }
       }
 
       if (isAuthenticated && user?.id) {
-        const res = await taskService.archiveTask(user.id, taskId, nextArchived);
+        const res = await taskService.archiveTask(user.id, taskId, nextArchived, { timezone, now });
         if (res.error) {
-          showToast(`Error archiving task: ${res.error}`, 'warning');
-          setTasks((prev) => prev.map((t) => (t.id === taskId ? target : t)));
-          await refreshCalendarBlocks();
+          showToast(`Error ${nextArchived ? 'archiving' : 'restoring'} task: ${res.error}`, 'warning');
+          setTasks(prevTasks);
+          setCalendarBlocks(prevBlocks);
+          return false;
         } else {
           showToast(
-            nextArchived ? 'Task moved to Archive.' : 'Task restored from Archive.',
-            'success'
+            res.warning
+              ? res.warning
+              : nextArchived
+                ? 'Task moved to Archive.'
+                : 'Task restored from Archive.',
+            res.warning ? 'info' : 'success'
           );
           await refreshCalendarBlocks();
+          return true;
         }
       } else {
         showToast(
           nextArchived ? 'Task moved to Archive.' : 'Task restored from Archive.',
           'success'
         );
+        return true;
       }
     },
-    [activeTimer, isAuthenticated, refreshCalendarBlocks, showToast, stopAndSaveActiveTimer, tasks, user?.id]
+    [activeTimer, calendarBlocks, isAuthenticated, profile.timezone, refreshCalendarBlocks, showToast, stopAndSaveActiveTimer, tasks, user?.id]
   );
 
   const deleteTask = useCallback(
@@ -1070,7 +1170,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [archiveTask, taskPendingDelete]);
 
   const scheduleTaskToDate = useCallback(
-    (taskId: string, dateIso: string | null) => {
+    async (taskId: string, dateIso: string | null) => {
       const target = tasks.find((t) => t.id === taskId);
       setTasks((prev) =>
         prev.map((t) =>
@@ -1086,21 +1186,22 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       );
 
       if (isAuthenticated && user?.id) {
-        taskService.scheduleTask(user.id, taskId, dateIso).then((res) => {
-          if (res.error) {
-            showToast(`Error scheduling task: ${res.error}`, 'warning');
-            if (target) {
-              setTasks((prev) => prev.map((t) => (t.id === taskId ? target : t)));
-            }
-          } else if (res.data) {
-            setTasks((prev) => prev.map((t) => (t.id === taskId ? res.data! : t)));
+        const res = await taskService.scheduleTask(user.id, taskId, dateIso);
+        if (res.error) {
+          showToast(`Error scheduling task: ${res.error}`, 'warning');
+          if (target) {
+            setTasks((prev) => prev.map((t) => (t.id === taskId ? target : t)));
           }
-        });
+          return;
+        } else if (res.data) {
+          setTasks((prev) => prev.map((t) => (t.id === taskId ? res.data! : t)));
+          await refreshCalendarBlocks();
+        }
       }
 
       showToast(dateIso ? `Task scheduled for ${dateIso}.` : 'Task moved to Inbox.', 'success');
     },
-    [isAuthenticated, showToast, tasks, user?.id]
+    [isAuthenticated, refreshCalendarBlocks, showToast, tasks, user?.id]
   );
 
   const saveProject = useCallback(

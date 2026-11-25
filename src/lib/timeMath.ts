@@ -159,6 +159,73 @@ export function getLocalDateISO(date: Date = new Date()): string {
 }
 
 /**
+ * Returns YYYY-MM-DD and HH:mm in the specified IANA timezone (defaults to runtime local timezone).
+ */
+export function getDateTimeInTimezone(
+  date: Date = new Date(),
+  timezone?: string
+): { dateIso: string; timeHHMM: string } {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      ...(timezone ? { timeZone: timezone } : {}),
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(date);
+    const getPart = (type: string) => parts.find((p) => p.type === type)?.value || '';
+    const year = getPart('year');
+    const month = getPart('month');
+    const day = getPart('day');
+    let hour = getPart('hour');
+    const minute = getPart('minute');
+    if (hour === '24') hour = '00';
+    if (year && month && day && hour && minute) {
+      return {
+        dateIso: `${year}-${month}-${day}`,
+        timeHHMM: `${hour}:${minute}`,
+      };
+    }
+  } catch {
+    // Fallback to runtime local timezone if timezone string is unsupported
+  }
+
+  return {
+    dateIso: getLocalDateISO(date),
+    timeHHMM: `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
+  };
+}
+
+/**
+ * Determines whether a calendar block is a future scheduled commitment
+ * using the user's local timezone and the block's actual start time.
+ */
+export function isFutureCalendarBlock(
+  block: {
+    blockDate?: string;
+    block_date?: string;
+    startTime?: string;
+    start_time?: string;
+    status?: string;
+  },
+  now: Date = new Date(),
+  timezone?: string
+): boolean {
+  if (block.status && block.status !== 'scheduled') return false;
+  const blockDate = block.blockDate ?? block.block_date ?? '';
+  const startTime = (block.startTime ?? block.start_time ?? '00:00').slice(0, 5);
+  if (!blockDate) return false;
+
+  const { dateIso: todayIso, timeHHMM } = getDateTimeInTimezone(now, timezone);
+  if (blockDate > todayIso) return true;
+  if (blockDate < todayIso) return false;
+  return startTime > timeHHMM;
+}
+
+/**
  * Determines whether a task is overdue relative to today's YYYY-MM-DD date.
  * Completed, archived, and unscheduled Inbox tasks are never overdue.
  */

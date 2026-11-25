@@ -216,18 +216,25 @@ export function getOccupiedIntervalsForDate(
   excludeTaskId?: string
 ): TimeInterval[] {
   const intervals: TimeInterval[] = [];
+  const archivedTaskIds = new Set(tasks.filter((t) => t.isArchived).map((t) => t.id));
+  const taskTitleMap = new Map(tasks.map((t) => [t.id, t.title]));
 
-  // 1. Existing calendar blocks on this date
+  // 1. Existing calendar blocks on this date (ignore cancelled blocks and scheduled blocks of archived tasks)
   for (const block of calendarBlocks) {
+    if (block.status === 'cancelled') continue;
+    if (archivedTaskIds.has(block.taskId) && block.status === 'scheduled') continue;
     if (block.blockDate === dateIso && block.taskId !== excludeTaskId) {
       const sm = timeStringToMinutes(block.startTime);
       const em = timeStringToMinutes(block.endTime);
       if (em > sm) {
+        const title = taskTitleMap.get(block.taskId);
         intervals.push({
           startMinutes: sm,
           endMinutes: em,
           sourceId: block.id,
-          sourceTitle: `Scheduled Block (${minutesToTimeString(sm)} - ${minutesToTimeString(em)})`,
+          sourceTitle: title
+            ? `${title} (${minutesToTimeString(sm)} - ${minutesToTimeString(em)})`
+            : `Scheduled Block (${minutesToTimeString(sm)} - ${minutesToTimeString(em)})`,
           type: 'calendar_block',
         });
       }

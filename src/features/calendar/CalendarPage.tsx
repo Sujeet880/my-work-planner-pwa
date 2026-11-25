@@ -16,6 +16,7 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import {
   formatDuration,
   getLocalDateISO,
+  isFutureCalendarBlock,
 } from '../../lib/timeMath';
 import {
   timeStringToMinutes,
@@ -28,6 +29,7 @@ export type CalendarViewMode = 'week' | 'day' | 'month';
 
 export function CalendarPage() {
   const {
+    profile,
     tasks,
     projects,
     calendarBlocks,
@@ -160,7 +162,9 @@ export function CalendarPage() {
     const map = new Map<string, TaskCalendarBlock[]>();
     for (const b of calendarBlocks) {
       const task = taskMap.get(b.taskId);
-      if (!task || task.isArchived) continue;
+      if (!task) continue;
+      // If task is archived, hide only future scheduled blocks; keep historical and completed blocks visible
+      if (task.isArchived && isFutureCalendarBlock(b, new Date(), profile.timezone)) continue;
       if (selectedProjectId !== 'all' && task.projectId !== selectedProjectId) continue;
 
       const list = map.get(b.blockDate) || [];
@@ -196,7 +200,7 @@ export function CalendarPage() {
     }
 
     return map;
-  }, [calendarBlocks, filteredTasks, selectedProjectId, taskMap]);
+  }, [calendarBlocks, filteredTasks, profile.timezone, selectedProjectId, taskMap]);
 
   // Hours range for time grid (08:00 to 20:00)
   const gridHours = useMemo(() => {

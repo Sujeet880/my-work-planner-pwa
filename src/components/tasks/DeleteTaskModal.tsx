@@ -51,7 +51,7 @@ export function DeleteTaskModal() {
           <div className="flex items-start gap-2">
             <CalendarX2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#2F65F6]" />
             <span>
-              <strong>Calendar cleanup:</strong> Scheduled calendar time blocks will be removed from your active schedule.
+              <strong>Calendar cleanup:</strong> Future scheduled time blocks will be removed from your active schedule, while historical calendar records remain intact.
             </span>
           </div>
           <div className="flex items-start gap-2">

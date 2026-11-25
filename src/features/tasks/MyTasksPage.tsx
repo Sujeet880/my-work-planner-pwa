@@ -198,6 +198,7 @@ export function MyTasksPage() {
   }, [
     activeTab,
     nonArchived,
+    tasks,
     todayIso,
     todaySubFilter,
     projectFilter,
