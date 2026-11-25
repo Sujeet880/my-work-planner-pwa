@@ -1,24 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, CheckCircle2, CheckSquare } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getSupabaseBrowserClient } from '../../lib/supabaseClient';
 import { Button } from '../../components/ui/Button';
 
 export function AuthCallbackPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isClient, isOwner } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(true);
 
   useEffect(() => {
-    const targetRedirect = sessionStorage.getItem('auth_redirect_to') || '/dashboard';
+    let isMounted = true;
+    const targetRedirect = sessionStorage.getItem('auth_redirect_to');
+
+    const getDestination = (role?: 'owner' | 'client') => {
+      if (targetRedirect) return targetRedirect;
+      if (role === 'client' || (isClient && !isOwner)) return '/portal';
+      return '/dashboard';
+    };
 
     // 1. If already authenticated via onAuthStateChange, navigate immediately
     if (isAuthenticated) {
       sessionStorage.removeItem('auth_redirect_to');
-      navigate(targetRedirect, { replace: true });
+      navigate(getDestination(), { replace: true });
       return;
     }
 
@@ -41,41 +48,101 @@ export function AuthCallbackPage() {
       return;
     }
 
-    // 3. Handle PKCE code exchange if present
-    const code = urlParams.get('code');
     const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      setErrorMsg('Supabase client is not configured.');
+      setIsProcessing(false);
+      return;
+    }
 
-    if (code && supabase) {
+    const completeAuth = (role?: 'owner' | 'client') => {
+      if (!isMounted) return;
+      window.history.replaceState({}, document.title, window.location.pathname);
+      sessionStorage.removeItem('auth_redirect_to');
+      navigate(getDestination(role), { replace: true });
+    };
+
+    // 3. Flow A: PKCE Authorization Code Exchange (code in search params)
+    const code = urlParams.get('code');
+    if (code) {
       supabase.auth
         .exchangeCodeForSession(code)
         .then(({ error }) => {
+          if (!isMounted) return;
           if (error) {
             setErrorMsg(error.message);
             setIsProcessing(false);
           } else {
-            // Clean URL and redirect to destination
-            window.history.replaceState({}, document.title, window.location.pathname);
-            sessionStorage.removeItem('auth_redirect_to');
-            navigate(targetRedirect, { replace: true });
+            completeAuth();
           }
         })
         .catch((err) => {
+          if (!isMounted) return;
           setErrorMsg(err instanceof Error ? err.message : 'Authentication exchange failed');
           setIsProcessing(false);
         });
       return;
     }
 
-    // 4. Fallback timer if hash tokens are being processed by supabase-js
+    // 4. Flow B: Token Hash Verification (token_hash in query or hash params)
+    const tokenHash = urlParams.get('token_hash') || hashParams.get('token_hash');
+    const authType = (urlParams.get('type') || hashParams.get('type') || 'magiclink') as any;
+    if (tokenHash) {
+      supabase.auth
+        .verifyOtp({ token_hash: tokenHash, type: authType })
+        .then(({ error }) => {
+          if (!isMounted) return;
+          if (error) {
+            setErrorMsg(error.message);
+            setIsProcessing(false);
+          } else {
+            completeAuth();
+          }
+        })
+        .catch((err) => {
+          if (!isMounted) return;
+          setErrorMsg(err instanceof Error ? err.message : 'OTP Verification failed');
+          setIsProcessing(false);
+        });
+      return;
+    }
+
+    // 5. Flow C: Explicit Hash Fragment Tokens (access_token & refresh_token)
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    if (accessToken && refreshToken) {
+      supabase.auth
+        .setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error }) => {
+          if (!isMounted) return;
+          if (error) {
+            setErrorMsg(error.message);
+            setIsProcessing(false);
+          } else {
+            completeAuth();
+          }
+        })
+        .catch((err) => {
+          if (!isMounted) return;
+          setErrorMsg(err instanceof Error ? err.message : 'Session establishment failed');
+          setIsProcessing(false);
+        });
+      return;
+    }
+
+    // 6. Fallback safety timer: in case supabase-js detectSessionInUrl is processing
     const timer = setTimeout(() => {
-      if (!isAuthenticated) {
+      if (isMounted && !isAuthenticated) {
         setIsProcessing(false);
         setErrorMsg('Authentication timed out or link is expired. Please try signing in again.');
       }
-    }, 4000);
+    }, 4500);
 
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, navigate, searchParams]);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [isAuthenticated, isClient, isOwner, navigate, searchParams]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#F4F7FD] bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(59,102,245,0.12),rgba(255,255,255,0))] px-4 py-12">

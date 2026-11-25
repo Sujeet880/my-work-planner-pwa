@@ -2,7 +2,7 @@
 // Handles static shell metadata caching, resilient offline support, and background Web Push notifications.
 // Never caches private Supabase data or auth sessions.
 
-const CACHE_NAME = 'mwp-shell-v3';
+const CACHE_NAME = 'mwp-shell-v5';
 const SHELL_ASSETS = [
   '/',
   '/manifest.webmanifest',
@@ -17,7 +17,27 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(SHELL_ASSETS))
+      .then(async (cache) => {
+        await cache.addAll(SHELL_ASSETS);
+        try {
+          const indexResponse = await fetch('/', { cache: 'no-cache' });
+          if (indexResponse && indexResponse.status === 200) {
+            const htmlText = await indexResponse.clone().text();
+            await cache.put('/', indexResponse);
+            // Discover Vite hashed JS & CSS assets from index.html
+            const matches = htmlText.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g);
+            const discoveredUrls = [];
+            for (const match of matches) {
+              discoveredUrls.push(match[1]);
+            }
+            if (discoveredUrls.length > 0) {
+              await cache.addAll([...new Set(discoveredUrls)]);
+            }
+          }
+        } catch (err) {
+          console.warn('Pre-caching dynamic assets in SW install note:', err);
+        }
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -37,6 +57,9 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+  if (event.data && event.data.type === 'CACHE_ASSETS' && Array.isArray(event.data.urls)) {
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(event.data.urls)).catch(() => {});
+  }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -54,7 +77,8 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (response && response.status === 200) {
+          // Cache successful root shell navigation, but never cache dynamic auth callbacks
+          if (response && response.status === 200 && !url.pathname.startsWith('/auth/')) {
             const copy = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put('/', copy));
           }
@@ -78,6 +102,10 @@ self.addEventListener('fetch', (event) => {
               caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
             }
             return networkResponse;
+          })
+          .catch((err) => {
+            console.warn('Asset fetch failed in service worker:', url.pathname, err);
+            return new Response('Asset unavailable', { status: 404, statusText: 'Not Found' });
           });
       })
     );

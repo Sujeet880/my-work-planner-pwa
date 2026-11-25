@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
+  Archive,
   Bell,
   Calendar,
   CheckCircle2,
@@ -29,7 +30,7 @@ import { TaskRow } from '../../components/tasks/TaskRow';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Input, Select } from '../../components/ui/Field';
 
-const VALID_TABS: TaskViewTab[] = ['today', 'upcoming', 'inbox', 'all', 'completed'];
+const VALID_TABS: TaskViewTab[] = ['today', 'upcoming', 'inbox', 'all', 'completed', 'archived'];
 
 export function MyTasksPage() {
   const {
@@ -111,8 +112,9 @@ export function MyTasksPage() {
       ).length,
       all: nonArchived.filter((t) => t.status !== 'completed').length,
       completed: nonArchived.filter((t) => t.status === 'completed').length,
+      archived: tasks.filter((t) => t.isArchived).length,
     }),
-    [nonArchived, todayIso]
+    [nonArchived, tasks, todayIso]
   );
 
   // Today specific lists and calculations
@@ -142,9 +144,13 @@ export function MyTasksPage() {
   // Filtered tasks for current active tab
   const visibleTasks = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
+    const baseTasks = activeTab === 'archived' ? tasks.filter((t) => t.isArchived) : nonArchived;
 
-    return nonArchived
+    return baseTasks
       .filter((t) => {
+        if (activeTab === 'archived') {
+          return true;
+        }
         if (activeTab === 'today') {
           const isTodayTask = t.scheduledDate === todayIso || isTaskOverdue(t, todayIso);
           if (!isTodayTask) return false;
@@ -246,6 +252,7 @@ export function MyTasksPage() {
     { key: 'inbox', label: 'Inbox', count: counts.inbox },
     { key: 'all', label: 'All Tasks', count: counts.all },
     { key: 'completed', label: 'Completed', count: counts.completed },
+    { key: 'archived', label: 'Archived', count: counts.archived },
   ];
 
   return (
@@ -262,7 +269,9 @@ export function MyTasksPage() {
                   ? 'Inbox'
                   : activeTab === 'completed'
                     ? 'Completed'
-                    : 'My Tasks'}
+                    : activeTab === 'archived'
+                      ? 'Archived'
+                      : 'My Tasks'}
           </h1>
           <p className="mt-1 text-sm font-medium text-[#7E8B9B]">
             {activeTab === 'today'
@@ -273,7 +282,9 @@ export function MyTasksPage() {
                   ? `${counts.inbox} unscheduled ideas awaiting your decision`
                   : activeTab === 'completed'
                     ? `${counts.completed} tasks accomplished`
-                    : 'Overview of all active workspace tasks'}
+                    : activeTab === 'archived'
+                      ? `${counts.archived} archived tasks with preserved historical work sessions`
+                      : 'Overview of all active workspace tasks'}
           </p>
         </div>
 
@@ -831,6 +842,36 @@ export function MyTasksPage() {
               icon={<CheckCircle2 className="h-6 w-6 text-[#10B981]" />}
               title="No completed tasks found"
               description="Completed tasks will appear here for historical review."
+            />
+          ) : (
+            <div className="space-y-3">
+              {visibleTasks.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  project={projects.find((p) => p.id === task.projectId)}
+                  timeEntries={timeEntries}
+                  activeTimer={activeTimer}
+                  nowMs={nowMs}
+                  onToggleComplete={toggleTaskCompletion}
+                  onStartTimer={startTaskTimer}
+                  onPauseTimer={pauseActiveTimer}
+                  onEditTask={openEditTaskDrawer}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ======================= TAB: ARCHIVED ======================= */}
+      {activeTab === 'archived' && (
+        <div className="rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl">
+          {visibleTasks.length === 0 ? (
+            <EmptyState
+              icon={<Archive className="h-6 w-6 text-amber-600" />}
+              title="No archived tasks"
+              description="Tasks moved to Archive will appear here. Their historical work sessions and time entries remain safely preserved in reports."
             />
           ) : (
             <div className="space-y-3">

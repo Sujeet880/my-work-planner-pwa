@@ -121,9 +121,9 @@ export interface WorkspaceContextValue {
   setGlobalSearchQuery: (query: string) => void;
 
   // Task actions
-  saveTask: (values: TaskFormValues, existingTaskId?: string) => Task;
+  saveTask: (values: TaskFormValues, existingTaskId?: string) => Promise<Task | null>;
   toggleTaskCompletion: (taskId: string) => void;
-  archiveTask: (taskId: string) => void;
+  archiveTask: (taskId: string, explicitArchived?: boolean) => Promise<void> | void;
   deleteTask: (taskId: string) => void;
   scheduleTaskToDate: (taskId: string, dateIso: string | null) => void;
 
@@ -676,7 +676,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [activeTimer, showToast, tasks]);
 
   const saveTask = useCallback(
-    (values: TaskFormValues, existingTaskId?: string): Task => {
+    async (values: TaskFormValues, existingTaskId?: string): Promise<Task | null> => {
       const nowIso = new Date().toISOString();
       const currentUserId = user?.id || profile.id;
       const scheduledDate = values.scheduledDate.trim() || null;
@@ -778,17 +778,17 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (isAuthenticated && user?.id) {
-          taskService.updateTask(user.id, existingTaskId, values).then((res) => {
-            if (res.error) {
-              showToast(`Error updating task: ${res.error}`, 'warning');
-              if (prevTask) {
-                setTasks((prev) => prev.map((t) => (t.id === existingTaskId ? prevTask : t)));
-              }
-            } else if (res.data) {
-              setTasks((prev) => prev.map((t) => (t.id === existingTaskId ? res.data! : t)));
-              refreshCalendarBlocks();
+          const res = await taskService.updateTask(user.id, existingTaskId, values);
+          if (res.error) {
+            showToast(`Error updating task: ${res.error}`, 'warning');
+            if (prevTask) {
+              setTasks((prev) => prev.map((t) => (t.id === existingTaskId ? prevTask : t)));
             }
-          });
+            return null;
+          } else if (res.data) {
+            setTasks((prev) => prev.map((t) => (t.id === existingTaskId ? res.data! : t)));
+            await refreshCalendarBlocks();
+          }
         }
 
         showToast('Task updated.', 'success');
@@ -851,16 +851,16 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (isAuthenticated && user?.id) {
-        taskService.createTask(user.id, values).then((res) => {
-          if (res.error) {
-            showToast(`Error creating task: ${res.error}`, 'warning');
-            setTasks((prev) => prev.filter((t) => t.id !== tempId));
-            setCalendarBlocks((prev) => prev.filter((b) => b.taskId !== tempId));
-          } else if (res.data) {
-            setTasks((prev) => prev.map((t) => (t.id === tempId ? res.data! : t)));
-            refreshCalendarBlocks();
-          }
-        });
+        const res = await taskService.createTask(user.id, values);
+        if (res.error) {
+          showToast(`Error creating task: ${res.error}`, 'warning');
+          setTasks((prev) => prev.filter((t) => t.id !== tempId));
+          setCalendarBlocks((prev) => prev.filter((b) => b.taskId !== tempId));
+          return null;
+        } else if (res.data) {
+          setTasks((prev) => prev.map((t) => (t.id === tempId ? res.data! : t)));
+          await refreshCalendarBlocks();
+        }
       }
 
       showToast('Task created.', 'success');
@@ -978,32 +978,47 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [activeTimer, isAuthenticated, pendingCompleteWithTimer, profile.id, showToast, tasks, timeEntries, user?.id]);
 
   const archiveTask = useCallback(
-    (taskId: string) => {
+    async (taskId: string, explicitArchived?: boolean) => {
       const target = tasks.find((t) => t.id === taskId);
+      if (!target) return;
+      const nextArchived = explicitArchived !== undefined ? explicitArchived : !target.isArchived;
+
+      // If active timer is running on this task, safely stop and save it first
       if (activeTimer?.taskId === taskId) {
-        commitActiveTimerSession(activeTimer);
+        await stopAndSaveActiveTimer();
       }
 
       setTasks((prev) =>
         prev.map((t) =>
-          t.id === taskId ? { ...t, isArchived: true, updatedAt: new Date().toISOString() } : t
+          t.id === taskId ? { ...t, isArchived: nextArchived, updatedAt: new Date().toISOString() } : t
         )
       );
 
-      if (isAuthenticated && user?.id) {
-        taskService.archiveTask(user.id, taskId, true).then((res) => {
-          if (res.error) {
-            showToast(`Error archiving task: ${res.error}`, 'warning');
-            if (target) {
-              setTasks((prev) => prev.map((t) => (t.id === taskId ? target : t)));
-            }
-          }
-        });
+      if (nextArchived) {
+        setCalendarBlocks((prev) => prev.filter((b) => b.taskId !== taskId));
       }
 
-      showToast('Task archived. Historical time logs remain preserved.', 'info');
+      if (isAuthenticated && user?.id) {
+        const res = await taskService.archiveTask(user.id, taskId, nextArchived);
+        if (res.error) {
+          showToast(`Error archiving task: ${res.error}`, 'warning');
+          setTasks((prev) => prev.map((t) => (t.id === taskId ? target : t)));
+          await refreshCalendarBlocks();
+        } else {
+          showToast(
+            nextArchived ? 'Task moved to Archive.' : 'Task restored from Archive.',
+            'success'
+          );
+          await refreshCalendarBlocks();
+        }
+      } else {
+        showToast(
+          nextArchived ? 'Task moved to Archive.' : 'Task restored from Archive.',
+          'success'
+        );
+      }
     },
-    [activeTimer, commitActiveTimerSession, isAuthenticated, showToast, tasks, user?.id]
+    [activeTimer, isAuthenticated, refreshCalendarBlocks, showToast, stopAndSaveActiveTimer, tasks, user?.id]
   );
 
   const deleteTask = useCallback(
@@ -1049,10 +1064,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const confirmDeleteTask = useCallback(() => {
     if (!taskPendingDelete) return;
     const id = taskPendingDelete.id;
-    deleteTask(id);
+    archiveTask(id, true);
     setDeleteTaskModalOpen(false);
     setTaskPendingDelete(null);
-  }, [deleteTask, taskPendingDelete]);
+  }, [archiveTask, taskPendingDelete]);
 
   const scheduleTaskToDate = useCallback(
     (taskId: string, dateIso: string | null) => {

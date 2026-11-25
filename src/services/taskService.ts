@@ -150,34 +150,49 @@ export const taskService = {
     const shouldSyncCalendar = values.syncToGoogleCalendar ?? Boolean(scheduledDate);
 
     try {
+      const insertPayload: any = {
+        user_id: userId,
+        title: trimmedTitle,
+        description: values.description.trim() || null,
+        project_id: values.projectId || null,
+        priority: values.priority,
+        status: 'todo',
+        scheduled_date: scheduledDate,
+        scheduled_start_time: scheduledStartTime,
+        planned_duration_minutes: plannedMinutes,
+        remaining_estimate_minutes: remainingEstimate,
+        reminder_offset_minutes: reminderOffset,
+        sync_to_google_calendar: shouldSyncCalendar,
+        calendar_sync_status: shouldSyncCalendar && scheduledDate ? 'pending' : 'not_synced',
+        client_visible: values.projectId ? Boolean(values.clientVisible) : false,
+        completed_at: null,
+        is_archived: false,
+        sort_order: 0,
+      };
+
+      if (isMultiDay || values.scheduledEndDate) {
+        insertPayload.scheduled_end_date = isMultiDay ? scheduledEndDate : null;
+      }
+      if (dailyPlannedMinutes !== null) {
+        insertPayload.daily_planned_minutes = dailyPlannedMinutes;
+      }
+      if (includeWeekends) {
+        insertPayload.include_weekends = includeWeekends;
+      }
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert({
-          user_id: userId,
-          title: trimmedTitle,
-          description: values.description.trim() || null,
-          project_id: values.projectId || null,
-          priority: values.priority,
-          status: 'todo',
-          scheduled_date: scheduledDate,
-          scheduled_end_date: isMultiDay ? scheduledEndDate : null,
-          daily_planned_minutes: dailyPlannedMinutes,
-          include_weekends: includeWeekends,
-          scheduled_start_time: scheduledStartTime,
-          planned_duration_minutes: plannedMinutes,
-          remaining_estimate_minutes: remainingEstimate,
-          reminder_offset_minutes: reminderOffset,
-          sync_to_google_calendar: shouldSyncCalendar,
-          calendar_sync_status: shouldSyncCalendar && scheduledDate ? 'pending' : 'not_synced',
-          client_visible: values.projectId ? Boolean(values.clientVisible) : false,
-          completed_at: null,
-          is_archived: false,
-          sort_order: 0,
-        })
+        .insert(insertPayload)
         .select()
         .single();
 
       if (error) {
+        if (error.code === '42703' || error.message.includes('scheduled_end_date')) {
+          return {
+            data: null,
+            error: 'Database migration required: column tasks.scheduled_end_date does not exist. Please run migration 20261125000016 in the Supabase SQL editor.',
+          };
+        }
         return { data: null, error: error.message };
       }
 
@@ -194,7 +209,7 @@ export const taskService = {
           });
 
           if (plan.blocks.length > 0) {
-            taskService.syncTaskCalendarBlocks(
+            const syncRes = await taskService.syncTaskCalendarBlocks(
               userId,
               task.id,
               plan.blocks.map((b) => ({
@@ -203,9 +218,14 @@ export const taskService = {
                 endTime: b.endTime,
                 durationMinutes: b.durationMinutes,
               }))
-            ).catch((err) => {
-              console.warn('Calendar block creation warning:', err);
-            });
+            );
+            if (syncRes.error) {
+              console.error('Calendar blocks failed to save:', syncRes.error);
+              return {
+                data: task,
+                error: `Task created, but calendar blocks could not be saved: ${syncRes.error}`,
+              };
+            }
           }
         }
 
@@ -347,7 +367,7 @@ export const taskService = {
             includeWeekends: task.includeWeekends,
           });
 
-          taskService.syncTaskCalendarBlocks(
+          const syncRes = await taskService.syncTaskCalendarBlocks(
             userId,
             task.id,
             plan.blocks.map((b) => ({
@@ -356,12 +376,24 @@ export const taskService = {
               endTime: b.endTime,
               durationMinutes: b.durationMinutes,
             }))
-          ).catch((err) => {
-            console.warn('Calendar block update warning:', err);
-          });
+          );
+          if (syncRes.error) {
+            console.error('Calendar blocks failed to sync on update:', syncRes.error);
+            return {
+              data: task,
+              error: `Task updated, but calendar blocks could not be saved: ${syncRes.error}`,
+            };
+          }
         } else {
           // Moved to inbox -> clear calendar blocks
-          taskService.syncTaskCalendarBlocks(userId, task.id, []).catch(() => {});
+          const syncRes = await taskService.syncTaskCalendarBlocks(userId, task.id, []);
+          if (syncRes.error) {
+            console.error('Calendar blocks failed to clear on inbox move:', syncRes.error);
+            return {
+              data: task,
+              error: `Task updated, but calendar blocks could not be cleared: ${syncRes.error}`,
+            };
+          }
         }
 
         if (task.syncToGoogleCalendar && task.scheduledDate) {
@@ -443,7 +475,7 @@ export const taskService = {
             includeWeekends: task.includeWeekends,
           });
 
-          taskService.syncTaskCalendarBlocks(
+          const syncRes = await taskService.syncTaskCalendarBlocks(
             userId,
             task.id,
             plan.blocks.map((b) => ({
@@ -452,12 +484,24 @@ export const taskService = {
               endTime: b.endTime,
               durationMinutes: b.durationMinutes,
             }))
-          ).catch((err) => {
-            console.warn('Calendar block update warning:', err);
-          });
+          );
+          if (syncRes.error) {
+            console.error('Calendar blocks failed to sync on update:', syncRes.error);
+            return {
+              data: task,
+              error: `Task updated, but calendar blocks could not be saved: ${syncRes.error}`,
+            };
+          }
         } else {
           // Moved to inbox -> clear calendar blocks
-          taskService.syncTaskCalendarBlocks(userId, task.id, []).catch(() => {});
+          const syncRes = await taskService.syncTaskCalendarBlocks(userId, task.id, []);
+          if (syncRes.error) {
+            console.error('Calendar blocks failed to clear on inbox move:', syncRes.error);
+            return {
+              data: task,
+              error: `Task updated, but calendar blocks could not be cleared: ${syncRes.error}`,
+            };
+          }
         }
 
         if (task.syncToGoogleCalendar && task.scheduledDate) {
@@ -536,7 +580,7 @@ export const taskService = {
             includeWeekends: task.includeWeekends,
           });
 
-          taskService.syncTaskCalendarBlocks(
+          const syncRes = await taskService.syncTaskCalendarBlocks(
             userId,
             task.id,
             plan.blocks.map((b) => ({
@@ -545,12 +589,24 @@ export const taskService = {
               endTime: b.endTime,
               durationMinutes: b.durationMinutes,
             }))
-          ).catch((err) => {
-            console.warn('Calendar block update warning:', err);
-          });
+          );
+          if (syncRes.error) {
+            console.error('Calendar blocks failed to sync on update:', syncRes.error);
+            return {
+              data: task,
+              error: `Task updated, but calendar blocks could not be saved: ${syncRes.error}`,
+            };
+          }
         } else {
           // Moved to inbox -> clear calendar blocks
-          taskService.syncTaskCalendarBlocks(userId, task.id, []).catch(() => {});
+          const syncRes = await taskService.syncTaskCalendarBlocks(userId, task.id, []);
+          if (syncRes.error) {
+            console.error('Calendar blocks failed to clear on inbox move:', syncRes.error);
+            return {
+              data: task,
+              error: `Task updated, but calendar blocks could not be cleared: ${syncRes.error}`,
+            };
+          }
         }
 
         if (task.syncToGoogleCalendar && task.scheduledDate) {
@@ -587,6 +643,9 @@ export const taskService = {
 
   /**
    * Archives or unarchives a task.
+   * When archived, calendar blocks and future reminders are cleaned up while preserving
+   * historical completed work sessions and time tracking records.
+   * When unarchived, future calendar blocks are restored without duplicate blocks.
    */
   async archiveTask(
     userId: string,
@@ -600,9 +659,21 @@ export const taskService = {
 
     try {
       if (isArchived) {
-        // Remove from Google Calendar if archived (Case E)
+        // 1. Remove calendar blocks for this task so it clears from active schedule
+        await supabase
+          .from('task_calendar_blocks')
+          .delete()
+          .eq('task_id', taskId)
+          .eq('user_id', userId);
+
+        // 2. Queue remote Google Calendar deletion
         calendarService.queueSyncJob(taskId, 'delete').catch((err) => {
           console.warn('Calendar delete sync enqueue warning on archive:', err);
+        });
+
+        // 3. Cancel any pending reminders
+        reminderService.cancelReminder(taskId).catch((err) => {
+          console.warn('Reminder cancellation warning on archive:', err);
         });
       }
 
@@ -620,7 +691,7 @@ export const taskService = {
       }
 
       if (!isArchived) {
-        // If unarchiving, retrieve task to re-sync if scheduled
+        // If unarchiving, retrieve task to re-generate calendar blocks and re-sync calendar if scheduled
         const { data } = await supabase
           .from('tasks')
           .select('*')
@@ -628,10 +699,31 @@ export const taskService = {
           .eq('user_id', userId)
           .single();
         const task = data ? mapTaskFromRow(data) : null;
-        if (task && task.syncToGoogleCalendar && task.scheduledDate) {
-          calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
-            console.warn('Calendar sync job enqueue warning on unarchive:', err);
+        if (task && task.scheduledDate) {
+          const plan = calculateSchedulePlan({
+            startDate: task.scheduledDate,
+            endDate: task.scheduledEndDate || task.scheduledDate,
+            dailyPlannedHours: task.dailyPlannedMinutes ? task.dailyPlannedMinutes / 60 : (task.plannedDurationMinutes ? task.plannedDurationMinutes / 60 : 1),
+            preferredStartTime: task.scheduledStartTime || '09:00',
+            includeWeekends: task.includeWeekends,
           });
+          if (plan.blocks.length > 0) {
+            await taskService.syncTaskCalendarBlocks(
+              userId,
+              task.id,
+              plan.blocks.map((b) => ({
+                blockDate: b.date,
+                startTime: b.startTime,
+                endTime: b.endTime,
+                durationMinutes: b.durationMinutes,
+              }))
+            );
+          }
+          if (task.syncToGoogleCalendar) {
+            calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
+              console.warn('Calendar sync job enqueue warning on unarchive:', err);
+            });
+          }
         }
       }
 
@@ -698,6 +790,7 @@ export const taskService = {
 
   /**
    * Fetches all calendar blocks belonging to the authenticated user.
+   * Returns explicit database error if query fails, never suppresses with empty result.
    */
   async fetchCalendarBlocks(
     userId: string
@@ -716,20 +809,24 @@ export const taskService = {
         .order('start_time', { ascending: true });
 
       if (error) {
-        return { data: [], error: null };
+        return { data: null, error: error.message };
       }
 
       return {
         data: (data ?? []).map(mapCalendarBlockFromRow),
         error: null,
       };
-    } catch {
-      return { data: [], error: null };
+    } catch (err) {
+      return {
+        data: null,
+        error: err instanceof Error ? err.message : 'Failed to fetch calendar blocks',
+      };
     }
   },
 
   /**
    * Replaces or updates calendar blocks for a specific task.
+   * Safely captures existing blocks for rollback if insert fails.
    */
   async syncTaskCalendarBlocks(
     userId: string,
@@ -747,18 +844,43 @@ export const taskService = {
     }
 
     try {
-      // 1. Delete existing blocks for this task
-      await supabase
+      // 1. Fetch existing blocks first to allow safe recovery if insert fails
+      const { data: existingRows } = await supabase
+        .from('task_calendar_blocks')
+        .select('*')
+        .eq('task_id', taskId)
+        .eq('user_id', userId);
+
+      // If blocks are empty, delete existing blocks
+      if (blocks.length === 0) {
+        if (existingRows && existingRows.length > 0) {
+          const { error: delErr } = await supabase
+            .from('task_calendar_blocks')
+            .delete()
+            .eq('task_id', taskId)
+            .eq('user_id', userId);
+          if (delErr) {
+            return { data: null, error: `Failed to remove calendar blocks: ${delErr.message}` };
+          }
+        }
+        return { data: [], error: null };
+      }
+
+      // 2. Delete existing blocks for this task
+      const { error: deleteError } = await supabase
         .from('task_calendar_blocks')
         .delete()
         .eq('task_id', taskId)
         .eq('user_id', userId);
 
-      if (blocks.length === 0) {
-        return { data: [], error: null };
+      if (deleteError) {
+        return {
+          data: null,
+          error: `Failed to clear existing calendar blocks: ${deleteError.message}`,
+        };
       }
 
-      // 2. Insert new blocks
+      // 3. Insert new blocks
       const insertRows = blocks.map((b) => ({
         user_id: userId,
         task_id: taskId,
@@ -769,14 +891,24 @@ export const taskService = {
         status: 'scheduled',
       }));
 
-      const { data, error } = await supabase
+      const { data, error: insertError } = await supabase
         .from('task_calendar_blocks')
         .insert(insertRows)
         .select();
 
-      if (error) {
-        console.warn('Could not persist calendar blocks:', error.message);
-        return { data: [], error: null };
+      if (insertError) {
+        // Recovery: if existingRows was present, attempt to restore them
+        if (existingRows && existingRows.length > 0) {
+          try {
+            await supabase.from('task_calendar_blocks').insert(existingRows);
+          } catch {
+            // ignore rollback error
+          }
+        }
+        return {
+          data: null,
+          error: `Failed to save new calendar blocks: ${insertError.message}`,
+        };
       }
 
       return {
@@ -784,8 +916,10 @@ export const taskService = {
         error: null,
       };
     } catch (err) {
-      console.warn('Error syncing task calendar blocks:', err);
-      return { data: [], error: null };
+      return {
+        data: null,
+        error: err instanceof Error ? err.message : 'Error syncing task calendar blocks',
+      };
     }
   },
 };

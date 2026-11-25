@@ -11,6 +11,10 @@ import {
   getRememberMePreference,
 } from '../lib/supabaseClient';
 import {
+  getCachedRole,
+  setCachedRole,
+} from '../context/AuthContext';
+import {
   generateInvitationToken,
   hashInvitationToken,
 } from './sharingService';
@@ -57,6 +61,17 @@ describe('Remember Me & Dynamic Storage Adapter', () => {
     const pref = getRememberMePreference();
     assert.strictEqual(typeof pref, 'boolean');
     assert.strictEqual(pref, true);
+  });
+
+  it('Resolves known workspace owner synchronously in getCachedRole', () => {
+    const role = getCachedRole('user-123', 'ktsujeet1997@gmail.com');
+    assert.strictEqual(role, 'owner');
+  });
+
+  it('Gracefully handles undefined window in getCachedRole and setCachedRole', () => {
+    const role = getCachedRole('user-456', 'other@example.com');
+    assert.strictEqual(role, null);
+    assert.doesNotThrow(() => setCachedRole('user-456', 'client'));
   });
 });
 

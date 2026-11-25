@@ -6,6 +6,7 @@ import {
   triggerInstallPrompt,
   subscribeToInstallPrompt,
   getDeferredPrompt,
+  cacheLoadedAssets,
 } from './pwa';
 
 describe('PWA Installation & Platform Detection', () => {
@@ -56,7 +57,7 @@ describe('PWA Installation & Platform Detection', () => {
     const swContent = fs.readFileSync(swPath, 'utf-8');
 
     // Asserts cache version has been bumped
-    assert.ok(swContent.includes("const CACHE_NAME = 'mwp-shell-v3'"));
+    assert.ok(swContent.includes("const CACHE_NAME = 'mwp-shell-v5'"));
 
     // Asserts navigation requests are separated from subresource requests
     assert.ok(swContent.includes("request.mode === 'navigate'"));
@@ -70,5 +71,18 @@ describe('PWA Installation & Platform Detection', () => {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
     assert.equal(manifest.display, 'standalone');
     assert.equal(manifest.start_url, '/');
+
+    // Asserts pwa.ts configures updateViaCache: 'none' and focus-based updates
+    const pwaSource = fs.readFileSync(path.resolve(process.cwd(), 'src/lib/pwa.ts'), 'utf-8');
+    assert.ok(pwaSource.includes("updateViaCache: 'none'"));
+    assert.ok(pwaSource.includes("reg.update()"));
+    assert.ok(pwaSource.includes("controllerchange"));
+    assert.ok(pwaSource.includes("SKIP_WAITING"));
+    assert.ok(pwaSource.includes("cacheLoadedAssets"));
+    assert.ok(swContent.includes("CACHE_ASSETS"));
+  });
+
+  it('cacheLoadedAssets executes safely without throwing in non-browser environments', () => {
+    assert.doesNotThrow(() => cacheLoadedAssets());
   });
 });

@@ -29,7 +29,7 @@ export type TimeFormatPreference = '12h' | '24h';
 
 export type ReportPeriod = 'daily' | 'weekly' | 'monthly' | 'custom';
 
-export type TaskViewTab = 'today' | 'upcoming' | 'inbox' | 'all' | 'completed';
+export type TaskViewTab = 'today' | 'upcoming' | 'inbox' | 'all' | 'completed' | 'archived';
 
 export type ReminderStatus = 'scheduled' | 'sent' | 'cancelled' | 'failed';
 

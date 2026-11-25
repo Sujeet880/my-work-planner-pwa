@@ -65,18 +65,21 @@ create index if not exists idx_task_calendar_blocks_user_task
   on public.task_calendar_blocks (user_id, task_id);
 
 -- Row Level Security Policies (Strict cross-user isolation using (select auth.uid()))
+drop policy if exists "Users can select own task calendar blocks" on public.task_calendar_blocks;
 create policy "Users can select own task calendar blocks"
   on public.task_calendar_blocks
   for select
   to authenticated
   using ((select auth.uid()) = user_id);
 
+drop policy if exists "Users can insert own task calendar blocks" on public.task_calendar_blocks;
 create policy "Users can insert own task calendar blocks"
   on public.task_calendar_blocks
   for insert
   to authenticated
   with check ((select auth.uid()) = user_id);
 
+drop policy if exists "Users can update own task calendar blocks" on public.task_calendar_blocks;
 create policy "Users can update own task calendar blocks"
   on public.task_calendar_blocks
   for update
@@ -84,6 +87,7 @@ create policy "Users can update own task calendar blocks"
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
+drop policy if exists "Users can delete own task calendar blocks" on public.task_calendar_blocks;
 create policy "Users can delete own task calendar blocks"
   on public.task_calendar_blocks
   for delete

@@ -16,6 +16,7 @@ import {
   Pencil,
   Play,
   Plus,
+  RotateCcw,
   Square,
   Trash2,
 } from 'lucide-react';
@@ -136,8 +137,8 @@ export function TaskDetailsPage() {
   const completedHours = (completedMinutes / 60).toFixed(1).replace(/\.0$/, '') + 'h';
   const remainingHours = (remainingMinutes / 60).toFixed(1).replace(/\.0$/, '') + 'h';
 
-  const handleConfirmDelete = () => {
-    deleteTask(task.id);
+  const handleConfirmArchive = () => {
+    archiveTask(task.id, true);
     setConfirmDeleteOpen(false);
     navigate('/tasks');
   };
@@ -182,26 +183,26 @@ export function TaskDetailsPage() {
             </span>
           </Button>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              archiveTask(task.id);
-              navigate('/tasks');
-            }}
-          >
-            <Archive className="h-3.5 w-3.5" />
-            <span>Archive</span>
-          </Button>
-
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setConfirmDeleteOpen(true)}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span>Delete</span>
-          </Button>
+          {task.isArchived ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => archiveTask(task.id, false)}
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-[#2F65F6]" />
+              <span>Restore Task</span>
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setConfirmDeleteOpen(true)}
+              className="text-amber-700 hover:bg-amber-50"
+            >
+              <Archive className="h-3.5 w-3.5 text-amber-600" />
+              <span>Move to Archive</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -624,34 +625,35 @@ export function TaskDetailsPage() {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Archive Confirmation Modal */}
       <Modal
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
-        title="Delete Task?"
+        title="Move Task to Archive?"
         description=""
         footer={
           <div className="flex w-full items-center justify-end gap-2.5">
             <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" size="sm" onClick={handleConfirmDelete}>
-              Delete Task
+            <Button variant="primary" size="sm" onClick={handleConfirmArchive} className="bg-amber-600 hover:bg-amber-700 text-white">
+              <Archive className="h-4 w-4 mr-1.5" />
+              Move to Archive
             </Button>
           </div>
         }
       >
         <div className="space-y-4">
-          <div className="flex items-start gap-3 rounded-xl border border-rose-100 bg-rose-50/50 p-3.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-600">
-              <AlertTriangle className="h-5 w-5" />
+          <div className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/60 p-3.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+              <Archive className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
               <h4 className="text-sm font-bold text-[#1A1F2C] break-words">
                 {task.title}
               </h4>
               <p className="mt-1 text-xs text-[#7E8B9B]">
-                Are you sure you want to permanently delete this task?
+                This task will be moved to Archive and removed from your active task lists and calendar.
               </p>
             </div>
           </div>

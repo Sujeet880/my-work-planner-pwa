@@ -11,6 +11,7 @@ import { Button } from '../ui/Button';
 import { FieldWrapper, Input, Select, Textarea } from '../ui/Field';
 import {
   AlertTriangle,
+  Archive,
   Calendar,
   CalendarRange,
   CheckCircle2,
@@ -302,7 +303,7 @@ export function TaskFormModal() {
     setValues((v) => ({ ...v, reminderOffsetMinutes: val }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
 
@@ -376,8 +377,10 @@ export function TaskFormModal() {
         reminderOffsetMinutes: values.scheduledDate ? values.reminderOffsetMinutes : '',
       };
 
-      saveTask(finalValues, editingTask?.id);
-      closeTaskDrawer();
+      const result = await saveTask(finalValues, editingTask?.id);
+      if (result) {
+        closeTaskDrawer();
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -1111,16 +1114,16 @@ export function TaskFormModal() {
           <div>
             {editingTask ? (
               <Button
-                variant="destructive"
+                variant="secondary"
                 type="button"
                 onClick={() => {
                   closeTaskDrawer();
                   requestDeleteTask(editingTask);
                 }}
-                className="gap-1.5"
+                className="gap-1.5 text-amber-700 border-amber-200 hover:bg-amber-50"
               >
-                <Trash2 className="h-4 w-4" />
-                <span>Delete Task</span>
+                <Archive className="h-4 w-4 text-amber-600" />
+                <span>Move to Archive</span>
               </Button>
             ) : (
               <Button variant="ghost" onClick={handleSafeClose} disabled={isSubmitting}>

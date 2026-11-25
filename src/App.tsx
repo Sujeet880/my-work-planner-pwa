@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
 import { AppShell } from './components/layout/AppShell';
@@ -74,54 +75,56 @@ function WorkspaceRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <WorkspaceProvider>
-          <Routes>
-            <Route path="/" element={<RootRedirect />} />
-            <Route path="/sign-in" element={<SignInPage />} />
-            <Route path="/login" element={<LoginRedirect />} />
-            <Route path="/auth/callback" element={<AuthCallbackPage />} />
-            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/invite/:token" element={<AcceptInvitationPage />} />
-            <Route path="/settings/native-timer/connect" element={<NativeTimerConnectPage />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <WorkspaceProvider>
+            <Routes>
+              <Route path="/" element={<RootRedirect />} />
+              <Route path="/sign-in" element={<SignInPage />} />
+              <Route path="/login" element={<LoginRedirect />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/invite/:token" element={<AcceptInvitationPage />} />
+              <Route path="/settings/native-timer/connect" element={<NativeTimerConnectPage />} />
 
-            {/* Client Portal Routes (Protected by ClientPortalRoute) */}
-            <Route
-              path="/portal"
-              element={
-                <ClientPortalRoute>
-                  <SharedProjectsPage />
-                </ClientPortalRoute>
-              }
-            />
-            <Route
-              path="/portal/shared-with-me"
-              element={<Navigate to="/portal" replace />}
-            />
-            <Route
-              path="/portal/projects/:projectId"
-              element={
-                <ClientPortalRoute>
-                  <ClientProjectWorkspacePage />
-                </ClientPortalRoute>
-              }
-            />
-            <Route
-              path="/portal/inbox"
-              element={
-                <ClientPortalRoute>
-                  <ClientInboxPage />
-                </ClientPortalRoute>
-              }
-            />
+              {/* Client Portal Routes (Protected by ClientPortalRoute) */}
+              <Route
+                path="/portal"
+                element={
+                  <ClientPortalRoute>
+                    <SharedProjectsPage />
+                  </ClientPortalRoute>
+                }
+              />
+              <Route
+                path="/portal/shared-with-me"
+                element={<Navigate to="/portal" replace />}
+              />
+              <Route
+                path="/portal/projects/:projectId"
+                element={
+                  <ClientPortalRoute>
+                    <ClientProjectWorkspacePage />
+                  </ClientPortalRoute>
+                }
+              />
+              <Route
+                path="/portal/inbox"
+                element={
+                  <ClientPortalRoute>
+                    <ClientInboxPage />
+                  </ClientPortalRoute>
+                }
+              />
 
-            {/* Owner Workspace Routes (Protected by OwnerRoute inside WorkspaceRoutes) */}
-            <Route path="/*" element={<WorkspaceRoutes />} />
-          </Routes>
-        </WorkspaceProvider>
-      </AuthProvider>
-    </BrowserRouter>
+              {/* Owner Workspace Routes (Protected by OwnerRoute inside WorkspaceRoutes) */}
+              <Route path="/*" element={<WorkspaceRoutes />} />
+            </Routes>
+          </WorkspaceProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

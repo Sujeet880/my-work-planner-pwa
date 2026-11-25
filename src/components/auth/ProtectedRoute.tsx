@@ -29,10 +29,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
  * If an unauthorized authenticated account lands here, renders a secure Access Denied screen.
  */
 export function OwnerRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isOwner, isClient, isLoading, userEmail, signOut } = useAuth();
+  const { isAuthenticated, isOwner, isClient, isLoading, userRole, userEmail, signOut } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
+  if (isLoading || (isAuthenticated && userRole === null)) {
     return <LoadingScreen label="Verifying workspace authorization..." sublabel="Checking owner permissions" />;
   }
 
@@ -94,10 +94,10 @@ export function OwnerRoute({ children }: { children: React.ReactNode }) {
  * Allows access to external clients with accepted project memberships, and allows the owner to preview.
  */
 export function ClientPortalRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isOwner, isClient, isLoading, userEmail, signOut } = useAuth();
+  const { isAuthenticated, isOwner, isClient, isLoading, userRole, userEmail, signOut } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
+  if (isLoading || (isAuthenticated && userRole === null)) {
     return <LoadingScreen label="Loading Client Portal..." sublabel="Verifying project access permissions" />;
   }
 

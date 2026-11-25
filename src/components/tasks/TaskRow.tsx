@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
+  Archive,
   Calendar,
   CalendarRange,
   Check,
@@ -10,6 +11,7 @@ import {
   Pause,
   Pencil,
   Play,
+  RotateCcw,
   Trash2,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -47,7 +49,7 @@ export function TaskRow({
   onEditTask,
   compact = false,
 }: TaskRowProps) {
-  const { requestDeleteTask } = useWorkspace();
+  const { requestDeleteTask, archiveTask } = useWorkspace();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -244,17 +246,31 @@ export function TaskRow({
 
               <div className="my-1 border-t border-[#F0F3F9]" />
 
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  requestDeleteTask(task);
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 cursor-pointer"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>Delete Task</span>
-              </button>
+              {task.isArchived ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    archiveTask(task.id, false);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-[#2F65F6] hover:bg-[#EDF2FE] cursor-pointer"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Restore Task</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    requestDeleteTask(task);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 cursor-pointer"
+                >
+                  <Archive className="h-3.5 w-3.5 text-amber-600" />
+                  <span>Move to Archive</span>
+                </button>
+              )}
             </div>
           )}
         </div>

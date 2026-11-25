@@ -56,8 +56,34 @@ if (typeof window !== 'undefined') {
 }
 
 /**
+ * Precaches active script and stylesheet assets with the controlling Service Worker
+ * so subsequent launches in standalone PWA mode load instantly even with cold or absent network.
+ */
+export function cacheLoadedAssets(): void {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+  const controller = navigator.serviceWorker.controller;
+  if (!controller) return;
+
+  const assetUrls: string[] = [];
+  document.querySelectorAll('script[src], link[rel="stylesheet"]').forEach((el) => {
+    const src = el.getAttribute('src') || el.getAttribute('href');
+    if (src && src.startsWith('/assets/')) {
+      assetUrls.push(src);
+    }
+  });
+
+  if (assetUrls.length > 0) {
+    controller.postMessage({
+      type: 'CACHE_ASSETS',
+      urls: [...new Set(assetUrls)],
+    });
+  }
+}
+
+/**
  * Registers the minimal app-shell service worker in production and supported preview contexts.
- * Executes immediately if document load has already completed.
+ * Configured with updateViaCache: 'none' and active lifecycle checks on focus/visibility to
+ * ensure installed PWAs immediately discover and activate new production deployments.
  */
 export function registerServiceWorker(): void {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
@@ -66,15 +92,38 @@ export function registerServiceWorker(): void {
 
   const register = () => {
     navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
+      .register('/sw.js', { scope: '/', updateViaCache: 'none' })
       .then((reg) => {
-        // Listen for service worker updates
+        // 1. Actively check for updates immediately on registration and precache active scripts
+        reg.update().catch((err) => console.warn('SW initial update check:', err));
+        cacheLoadedAssets();
+
+        // 2. Check for updates whenever the PWA window is focused or becomes visible
+        window.addEventListener('focus', () => {
+          reg.update().catch(() => {});
+          cacheLoadedAssets();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            reg.update().catch(() => {});
+            cacheLoadedAssets();
+          }
+        });
+
+        // 3. Periodic update check for long-running standalone windows (every 30 mins)
+        setInterval(() => {
+          reg.update().catch(() => {});
+        }, 30 * 60 * 1000);
+
+        // 4. When a new service worker is installing, tell it to activate immediately once installed
         reg.addEventListener('updatefound', () => {
           const newWorker = reg.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New content is available; can emit update notice if needed
+                // New worker ready; activate immediately
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
               }
             });
           }
@@ -83,6 +132,16 @@ export function registerServiceWorker(): void {
       .catch((err) => {
         console.warn('Service worker registration note:', err);
       });
+
+    // 5. Automatically reload app when new service worker takes control (except during active auth flows)
+    let isRefreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (isRefreshing) return;
+      isRefreshing = true;
+      if (!window.location.pathname.startsWith('/auth/')) {
+        window.location.reload();
+      }
+    });
   };
 
   if (document.readyState === 'complete') {

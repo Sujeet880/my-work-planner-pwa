@@ -49,6 +49,28 @@ export interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const KNOWN_WORKSPACE_OWNER_EMAIL = 'ktsujeet1997@gmail.com';
+const ROLE_CACHE_KEY_PREFIX = 'mwp_cached_role_';
+
+export function getCachedRole(userId: string, email?: string | null): UserWorkspaceRole | null {
+  if (email && email.trim().toLowerCase() === KNOWN_WORKSPACE_OWNER_EMAIL.toLowerCase()) {
+    return 'owner';
+  }
+  if (typeof window === 'undefined') return null;
+  try {
+    const cached = localStorage.getItem(`${ROLE_CACHE_KEY_PREFIX}${userId}`);
+    if (cached === 'owner' || cached === 'client' || cached === 'unauthorized') {
+      return cached as UserWorkspaceRole;
+    }
+  } catch {}
+  return null;
+}
+
+export function setCachedRole(userId: string, role: UserWorkspaceRole): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`${ROLE_CACHE_KEY_PREFIX}${userId}`, role);
+  } catch {}
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const env = useMemo(() => getClientEnvConfig(), []);
@@ -243,6 +265,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(initialSession?.user ?? null);
 
         if (initialSession?.user) {
+          // Immediately restore role synchronously from cache or known owner email to prevent cold start access boundary delays
+          const cached = getCachedRole(initialSession.user.id, initialSession.user.email);
+          if (cached) {
+            setUserRole(cached);
+          }
+
           // Wrap profile and role resolution in a 2-second timeout race so offline startup doesn't stall UI
           const fetchRoleAndProfilePromise = Promise.all([
             fetchUserProfile(initialSession.user.id, initialSession.user.email || ''),
@@ -260,6 +288,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (userProf) setProfile(userProf);
             setUserRole(roleInfo.role);
             setClientProjectCount(roleInfo.clientProjects);
+            setCachedRole(initialSession.user.id, roleInfo.role);
           }
         } else {
           setUserRole(null);
@@ -300,6 +329,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (userProf) setProfile(userProf);
               setUserRole(roleInfo.role);
               setClientProjectCount(roleInfo.clientProjects);
+              setCachedRole(newSession.user.id, roleInfo.role);
             }
           } catch (err) {
             console.warn('Auth state change resolution note:', err);
@@ -372,6 +402,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (prof) setProfile(prof);
         setUserRole(roleInfo.role);
         setClientProjectCount(roleInfo.clientProjects);
+        setCachedRole(data.user.id, roleInfo.role);
 
         return { success: true, role: roleInfo.role };
       }
@@ -513,6 +544,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.warn('Sign-out error:', err);
       }
+    }
+    if (user?.id) {
+      try {
+        localStorage.removeItem(`${ROLE_CACHE_KEY_PREFIX}${user.id}`);
+      } catch {}
     }
     setSession(null);
     setUser(null);
