@@ -2,6 +2,7 @@ import { getSupabaseBrowserClient } from '../lib/supabaseClient';
 import type {
   CalendarSyncStatus,
   Task,
+  TaskCalendarBlock,
   TaskFormValues,
   TaskPriority,
   TaskStatus,
@@ -9,8 +10,32 @@ import type {
 import type { Database } from '../types/database.types';
 import { calendarService } from './calendarService';
 import { reminderService } from './reminderService';
+import {
+  calculateSchedulePlan,
+  calculateTotalPlannedMinutes,
+  calculateWorkingDays,
+} from './schedulingEngine';
 
 type TaskRow = Database['public']['Tables']['tasks']['Row'];
+type CalendarBlockRow = Database['public']['Tables']['task_calendar_blocks']['Row'];
+
+/**
+ * Maps a database calendar block row into the domain model.
+ */
+export function mapCalendarBlockFromRow(row: CalendarBlockRow): TaskCalendarBlock {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    taskId: row.task_id,
+    blockDate: row.block_date,
+    startTime: row.start_time ? row.start_time.slice(0, 5) : '09:00',
+    endTime: row.end_time ? row.end_time.slice(0, 5) : '10:00',
+    durationMinutes: row.duration_minutes,
+    status: (row.status as TaskCalendarBlock['status']) || 'scheduled',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 /**
  * Maps a database task row into the application domain model.
@@ -25,7 +50,10 @@ export function mapTaskFromRow(row: TaskRow): Task {
     priority: row.priority as TaskPriority,
     status: row.status as TaskStatus,
     scheduledDate: row.scheduled_date,
+    scheduledEndDate: (row as any).scheduled_end_date ?? null,
     scheduledStartTime: row.scheduled_start_time,
+    dailyPlannedMinutes: (row as any).daily_planned_minutes ?? null,
+    includeWeekends: Boolean((row as any).include_weekends),
     plannedDurationMinutes: row.planned_duration_minutes,
     reminderOffsetMinutes: row.reminder_offset_minutes,
     syncToGoogleCalendar: row.sync_to_google_calendar,
@@ -91,13 +119,25 @@ export const taskService = {
     }
 
     const scheduledDate = values.scheduledDate.trim() || null;
+    const scheduledEndDate = values.scheduledEndDate?.trim() || null;
+    const isMultiDay = Boolean(scheduledDate && scheduledEndDate && scheduledEndDate > scheduledDate);
+    const includeWeekends = Boolean(values.includeWeekends);
     const scheduledStartTime = scheduledDate && values.scheduledStartTime.trim()
       ? values.scheduledStartTime.trim()
       : null;
 
-    const plannedMinutes = values.plannedDurationMinutes.trim()
-      ? Math.max(1, parseInt(values.plannedDurationMinutes, 10) || 0)
-      : null;
+    let dailyPlannedMinutes: number | null = null;
+    let plannedMinutes: number | null = null;
+
+    if (isMultiDay && scheduledDate && values.dailyPlannedHours) {
+      const dailyHours = parseFloat(values.dailyPlannedHours) || 0;
+      dailyPlannedMinutes = Math.max(1, Math.round(dailyHours * 60));
+      const workingDays = calculateWorkingDays(scheduledDate, scheduledEndDate, includeWeekends);
+      plannedMinutes = calculateTotalPlannedMinutes(dailyHours, workingDays.length);
+    } else if (values.plannedDurationMinutes.trim()) {
+      plannedMinutes = Math.max(1, parseInt(values.plannedDurationMinutes, 10) || 0);
+      dailyPlannedMinutes = plannedMinutes;
+    }
 
     const reminderOffset = values.reminderOffsetMinutes.trim()
       ? parseInt(values.reminderOffsetMinutes, 10) || null
@@ -120,6 +160,9 @@ export const taskService = {
           priority: values.priority,
           status: 'todo',
           scheduled_date: scheduledDate,
+          scheduled_end_date: isMultiDay ? scheduledEndDate : null,
+          daily_planned_minutes: dailyPlannedMinutes,
+          include_weekends: includeWeekends,
           scheduled_start_time: scheduledStartTime,
           planned_duration_minutes: plannedMinutes,
           remaining_estimate_minutes: remainingEstimate,
@@ -140,6 +183,32 @@ export const taskService = {
 
       const task = data ? mapTaskFromRow(data) : null;
       if (task) {
+        // Automatically allocate calendar time blocks for scheduled dates
+        if (task.scheduledDate) {
+          const plan = calculateSchedulePlan({
+            startDate: task.scheduledDate,
+            endDate: task.scheduledEndDate || task.scheduledDate,
+            dailyPlannedHours: task.dailyPlannedMinutes ? task.dailyPlannedMinutes / 60 : (task.plannedDurationMinutes ? task.plannedDurationMinutes / 60 : 1),
+            preferredStartTime: task.scheduledStartTime || '09:00',
+            includeWeekends: task.includeWeekends,
+          });
+
+          if (plan.blocks.length > 0) {
+            taskService.syncTaskCalendarBlocks(
+              userId,
+              task.id,
+              plan.blocks.map((b) => ({
+                blockDate: b.date,
+                startTime: b.startTime,
+                endTime: b.endTime,
+                durationMinutes: b.durationMinutes,
+              }))
+            ).catch((err) => {
+              console.warn('Calendar block creation warning:', err);
+            });
+          }
+        }
+
         if (task.syncToGoogleCalendar && task.scheduledDate) {
           calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
             console.warn('Calendar sync job enqueue warning:', err);
@@ -193,13 +262,25 @@ export const taskService = {
     }
 
     const scheduledDate = values.scheduledDate.trim() || null;
+    const scheduledEndDate = values.scheduledEndDate?.trim() || null;
+    const isMultiDay = Boolean(scheduledDate && scheduledEndDate && scheduledEndDate > scheduledDate);
+    const includeWeekends = Boolean(values.includeWeekends);
     const scheduledStartTime = scheduledDate && values.scheduledStartTime.trim()
       ? values.scheduledStartTime.trim()
       : null;
 
-    const plannedMinutes = values.plannedDurationMinutes.trim()
-      ? Math.max(1, parseInt(values.plannedDurationMinutes, 10) || 0)
-      : null;
+    let dailyPlannedMinutes: number | null = null;
+    let plannedMinutes: number | null = null;
+
+    if (isMultiDay && scheduledDate && values.dailyPlannedHours) {
+      const dailyHours = parseFloat(values.dailyPlannedHours) || 0;
+      dailyPlannedMinutes = Math.max(1, Math.round(dailyHours * 60));
+      const workingDays = calculateWorkingDays(scheduledDate, scheduledEndDate, includeWeekends);
+      plannedMinutes = calculateTotalPlannedMinutes(dailyHours, workingDays.length);
+    } else if (values.plannedDurationMinutes.trim()) {
+      plannedMinutes = Math.max(1, parseInt(values.plannedDurationMinutes, 10) || 0);
+      dailyPlannedMinutes = plannedMinutes;
+    }
 
     const reminderOffset = values.reminderOffsetMinutes.trim()
       ? parseInt(values.reminderOffsetMinutes, 10) || null
@@ -218,6 +299,9 @@ export const taskService = {
         project_id: values.projectId || null,
         priority: values.priority,
         scheduled_date: scheduledDate,
+        scheduled_end_date: isMultiDay ? scheduledEndDate : null,
+        daily_planned_minutes: dailyPlannedMinutes,
+        include_weekends: includeWeekends,
         scheduled_start_time: scheduledStartTime,
         planned_duration_minutes: plannedMinutes,
         reminder_offset_minutes: reminderOffset,
@@ -253,6 +337,33 @@ export const taskService = {
 
       const task = data ? mapTaskFromRow(data) : null;
       if (task) {
+        // Automatically synchronize calendar time blocks for task
+        if (task.scheduledDate) {
+          const plan = calculateSchedulePlan({
+            startDate: task.scheduledDate,
+            endDate: task.scheduledEndDate || task.scheduledDate,
+            dailyPlannedHours: task.dailyPlannedMinutes ? task.dailyPlannedMinutes / 60 : (task.plannedDurationMinutes ? task.plannedDurationMinutes / 60 : 1),
+            preferredStartTime: task.scheduledStartTime || '09:00',
+            includeWeekends: task.includeWeekends,
+          });
+
+          taskService.syncTaskCalendarBlocks(
+            userId,
+            task.id,
+            plan.blocks.map((b) => ({
+              blockDate: b.date,
+              startTime: b.startTime,
+              endTime: b.endTime,
+              durationMinutes: b.durationMinutes,
+            }))
+          ).catch((err) => {
+            console.warn('Calendar block update warning:', err);
+          });
+        } else {
+          // Moved to inbox -> clear calendar blocks
+          taskService.syncTaskCalendarBlocks(userId, task.id, []).catch(() => {});
+        }
+
         if (task.syncToGoogleCalendar && task.scheduledDate) {
           calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
             console.warn('Calendar sync job enqueue warning:', err);
@@ -322,6 +433,33 @@ export const taskService = {
 
       const task = data ? mapTaskFromRow(data) : null;
       if (task) {
+        // Automatically synchronize calendar time blocks for task
+        if (task.scheduledDate) {
+          const plan = calculateSchedulePlan({
+            startDate: task.scheduledDate,
+            endDate: task.scheduledEndDate || task.scheduledDate,
+            dailyPlannedHours: task.dailyPlannedMinutes ? task.dailyPlannedMinutes / 60 : (task.plannedDurationMinutes ? task.plannedDurationMinutes / 60 : 1),
+            preferredStartTime: task.scheduledStartTime || '09:00',
+            includeWeekends: task.includeWeekends,
+          });
+
+          taskService.syncTaskCalendarBlocks(
+            userId,
+            task.id,
+            plan.blocks.map((b) => ({
+              blockDate: b.date,
+              startTime: b.startTime,
+              endTime: b.endTime,
+              durationMinutes: b.durationMinutes,
+            }))
+          ).catch((err) => {
+            console.warn('Calendar block update warning:', err);
+          });
+        } else {
+          // Moved to inbox -> clear calendar blocks
+          taskService.syncTaskCalendarBlocks(userId, task.id, []).catch(() => {});
+        }
+
         if (task.syncToGoogleCalendar && task.scheduledDate) {
           calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
             console.warn('Calendar sync job enqueue warning:', err);
@@ -388,6 +526,33 @@ export const taskService = {
 
       const task = data ? mapTaskFromRow(data) : null;
       if (task) {
+        // Automatically synchronize calendar time blocks for task
+        if (task.scheduledDate) {
+          const plan = calculateSchedulePlan({
+            startDate: task.scheduledDate,
+            endDate: task.scheduledEndDate || task.scheduledDate,
+            dailyPlannedHours: task.dailyPlannedMinutes ? task.dailyPlannedMinutes / 60 : (task.plannedDurationMinutes ? task.plannedDurationMinutes / 60 : 1),
+            preferredStartTime: task.scheduledStartTime || '09:00',
+            includeWeekends: task.includeWeekends,
+          });
+
+          taskService.syncTaskCalendarBlocks(
+            userId,
+            task.id,
+            plan.blocks.map((b) => ({
+              blockDate: b.date,
+              startTime: b.startTime,
+              endTime: b.endTime,
+              durationMinutes: b.durationMinutes,
+            }))
+          ).catch((err) => {
+            console.warn('Calendar block update warning:', err);
+          });
+        } else {
+          // Moved to inbox -> clear calendar blocks
+          taskService.syncTaskCalendarBlocks(userId, task.id, []).catch(() => {});
+        }
+
         if (task.syncToGoogleCalendar && task.scheduledDate) {
           calendarService.queueSyncJob(task.id, 'upsert', task).catch((err) => {
             console.warn('Calendar sync job enqueue warning:', err);
@@ -481,6 +646,7 @@ export const taskService = {
 
   /**
    * Deletes a task from the database.
+   * Associated calendar blocks and remote calendar events are cleaned up.
    * Work sessions are safely preserved via ON DELETE SET NULL on task_id.
    */
   async deleteTask(
@@ -493,16 +659,24 @@ export const taskService = {
     }
 
     try {
-      // Queue remote calendar deletion before deleting task from database
+      // 1. Queue remote calendar deletion before deleting task from database
       await calendarService.queueSyncJob(taskId, 'delete').catch((err) => {
         console.warn('Calendar delete sync enqueue warning:', err);
       });
 
-      // Cancel any pending reminders
+      // 2. Cancel any pending reminders
       await reminderService.cancelReminder(taskId).catch((err) => {
         console.warn('Reminder cancellation warning:', err);
       });
 
+      // 3. Delete task calendar blocks
+      await supabase
+        .from('task_calendar_blocks')
+        .delete()
+        .eq('task_id', taskId)
+        .eq('user_id', userId);
+
+      // 4. Delete the task
       const { error } = await supabase
         .from('tasks')
         .delete()
@@ -519,6 +693,99 @@ export const taskService = {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to delete task',
       };
+    }
+  },
+
+  /**
+   * Fetches all calendar blocks belonging to the authenticated user.
+   */
+  async fetchCalendarBlocks(
+    userId: string
+  ): Promise<{ data: TaskCalendarBlock[] | null; error: string | null }> {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      return { data: null, error: 'Supabase client is not configured' };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('task_calendar_blocks')
+        .select('*')
+        .eq('user_id', userId)
+        .order('block_date', { ascending: true })
+        .order('start_time', { ascending: true });
+
+      if (error) {
+        return { data: [], error: null };
+      }
+
+      return {
+        data: (data ?? []).map(mapCalendarBlockFromRow),
+        error: null,
+      };
+    } catch {
+      return { data: [], error: null };
+    }
+  },
+
+  /**
+   * Replaces or updates calendar blocks for a specific task.
+   */
+  async syncTaskCalendarBlocks(
+    userId: string,
+    taskId: string,
+    blocks: Array<{
+      blockDate: string;
+      startTime: string;
+      endTime: string;
+      durationMinutes: number;
+    }>
+  ): Promise<{ data: TaskCalendarBlock[] | null; error: string | null }> {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      return { data: null, error: 'Supabase client is not configured' };
+    }
+
+    try {
+      // 1. Delete existing blocks for this task
+      await supabase
+        .from('task_calendar_blocks')
+        .delete()
+        .eq('task_id', taskId)
+        .eq('user_id', userId);
+
+      if (blocks.length === 0) {
+        return { data: [], error: null };
+      }
+
+      // 2. Insert new blocks
+      const insertRows = blocks.map((b) => ({
+        user_id: userId,
+        task_id: taskId,
+        block_date: b.blockDate,
+        start_time: b.startTime,
+        end_time: b.endTime,
+        duration_minutes: b.durationMinutes,
+        status: 'scheduled',
+      }));
+
+      const { data, error } = await supabase
+        .from('task_calendar_blocks')
+        .insert(insertRows)
+        .select();
+
+      if (error) {
+        console.warn('Could not persist calendar blocks:', error.message);
+        return { data: [], error: null };
+      }
+
+      return {
+        data: (data ?? []).map(mapCalendarBlockFromRow),
+        error: null,
+      };
+    } catch (err) {
+      console.warn('Error syncing task calendar blocks:', err);
+      return { data: [], error: null };
     }
   },
 };

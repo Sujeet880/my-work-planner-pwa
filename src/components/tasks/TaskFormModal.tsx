@@ -1,18 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { validateTaskInput, type ValidationErrors } from '../../lib/timeMath';
+import { getLocalDateISO, validateTaskInput, type ValidationErrors } from '../../lib/timeMath';
+import {
+  calculateWorkingDays,
+  calculateSchedulePlan,
+  getOccupiedIntervalsForDate,
+} from '../../services/schedulingEngine';
 import type { TaskFormValues, TaskPriority, TaskStatus } from '../../types/models';
 import { Button } from '../ui/Button';
 import { FieldWrapper, Input, Select, Textarea } from '../ui/Field';
 import {
   AlertTriangle,
   Calendar,
+  CalendarRange,
+  CheckCircle2,
   Clock,
   Eye,
   EyeOff,
   Folder,
   Layers,
   Sparkles,
+  Trash2,
   X,
 } from 'lucide-react';
 
@@ -22,6 +30,10 @@ export interface TaskFormExtendedValues extends TaskFormValues {
   status?: TaskStatus;
   clientVisible?: boolean;
   remainingEstimateMinutes?: string;
+  scheduledEndDate?: string;
+  isMultiDay?: boolean;
+  dailyPlannedHours?: string;
+  includeWeekends?: boolean;
 }
 
 function buildInitialValues(
@@ -36,6 +48,15 @@ function buildInitialValues(
         ? String(editingTask.reminderOffsetMinutes)
         : '';
     const isCustom = Boolean(rawOffset && !STANDARD_OFFSETS.includes(rawOffset));
+    const isMultiDay = Boolean(
+      editingTask.scheduledEndDate &&
+      editingTask.scheduledDate &&
+      editingTask.scheduledEndDate > editingTask.scheduledDate
+    );
+    const dailyHours = editingTask.dailyPlannedMinutes
+      ? String(editingTask.dailyPlannedMinutes / 60)
+      : (editingTask.plannedDurationMinutes ? String(editingTask.plannedDurationMinutes / 60) : '4');
+
     return {
       formValues: {
         title: editingTask.title,
@@ -44,6 +65,10 @@ function buildInitialValues(
         priority: editingTask.priority,
         status: editingTask.status,
         scheduledDate: editingTask.scheduledDate ?? '',
+        scheduledEndDate: editingTask.scheduledEndDate ?? '',
+        isMultiDay,
+        dailyPlannedHours: dailyHours,
+        includeWeekends: editingTask.includeWeekends ?? false,
         scheduledStartTime: editingTask.scheduledStartTime ?? '',
         plannedDurationMinutes: editingTask.plannedDurationMinutes
           ? String(editingTask.plannedDurationMinutes)
@@ -72,6 +97,10 @@ function buildInitialValues(
       priority: 'medium',
       status: 'todo',
       scheduledDate: defaultDate ?? '',
+      scheduledEndDate: '',
+      isMultiDay: false,
+      dailyPlannedHours: '4',
+      includeWeekends: false,
       scheduledStartTime: '',
       plannedDurationMinutes: '',
       remainingEstimateMinutes: '',
@@ -94,6 +123,9 @@ export function TaskFormModal() {
     projects,
     profile,
     saveTask,
+    requestDeleteTask,
+    tasks,
+    calendarBlocks,
   } = useWorkspace();
 
   const defaultCalendarSync = profile?.defaultCalendarSyncEnabled ?? true;
@@ -109,7 +141,14 @@ export function TaskFormModal() {
   const [values, setValues] = useState<TaskFormExtendedValues>(initialData.formValues);
   const [isCustomOffset, setIsCustomOffset] = useState<boolean>(initialData.isCustom);
   const [customOffsetMinutes, setCustomOffsetMinutes] = useState<string>(initialData.customOffset);
-  const [errors, setErrors] = useState<ValidationErrors & { reminderCustomTime?: string; customOffset?: string }>({});
+  const [errors, setErrors] = useState<
+    ValidationErrors & {
+      reminderCustomTime?: string;
+      customOffset?: string;
+      scheduledEndDate?: string;
+      dailyPlannedHours?: string;
+    }
+  >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
@@ -139,7 +178,7 @@ export function TaskFormModal() {
   ]);
 
   // Check if form is dirty (has unsaved modifications)
-  const isDirty = React.useMemo(() => {
+  const isDirty = useMemo(() => {
     return (
       values.title !== initialData.formValues.title ||
       values.description !== initialData.formValues.description ||
@@ -147,6 +186,10 @@ export function TaskFormModal() {
       values.priority !== initialData.formValues.priority ||
       values.status !== initialData.formValues.status ||
       values.scheduledDate !== initialData.formValues.scheduledDate ||
+      values.scheduledEndDate !== initialData.formValues.scheduledEndDate ||
+      values.isMultiDay !== initialData.formValues.isMultiDay ||
+      values.dailyPlannedHours !== initialData.formValues.dailyPlannedHours ||
+      values.includeWeekends !== initialData.formValues.includeWeekends ||
       values.scheduledStartTime !== initialData.formValues.scheduledStartTime ||
       values.plannedDurationMinutes !== initialData.formValues.plannedDurationMinutes ||
       values.remainingEstimateMinutes !== initialData.formValues.remainingEstimateMinutes ||
@@ -155,6 +198,60 @@ export function TaskFormModal() {
       values.reminderOffsetMinutes !== initialData.formValues.reminderOffsetMinutes
     );
   }, [values, initialData]);
+
+  // Multi-day calculation preview
+  const workingDays = useMemo(() => {
+    if (
+      !values.isMultiDay ||
+      !values.scheduledDate ||
+      !values.scheduledEndDate ||
+      values.scheduledEndDate < values.scheduledDate
+    ) {
+      return [];
+    }
+    return calculateWorkingDays(
+      values.scheduledDate,
+      values.scheduledEndDate,
+      values.includeWeekends ?? false
+    );
+  }, [values.isMultiDay, values.scheduledDate, values.scheduledEndDate, values.includeWeekends]);
+
+  const dailyHoursNum = parseFloat(values.dailyPlannedHours || '4') || 0;
+  const totalCalculatedHours = workingDays.length * dailyHoursNum;
+  const totalCalculatedMinutes = Math.round(totalCalculatedHours * 60);
+
+  const schedulePlanPreview = useMemo(() => {
+    if (
+      !values.isMultiDay ||
+      !values.scheduledDate ||
+      !values.scheduledEndDate ||
+      workingDays.length === 0 ||
+      dailyHoursNum <= 0
+    ) {
+      return null;
+    }
+    return calculateSchedulePlan({
+      startDate: values.scheduledDate,
+      endDate: values.scheduledEndDate,
+      dailyPlannedHours: dailyHoursNum,
+      preferredStartTime: values.scheduledStartTime || '09:00',
+      includeWeekends: values.includeWeekends ?? false,
+      existingTasks: tasks,
+      existingBlocks: calendarBlocks,
+      excludeTaskId: editingTask?.id,
+    });
+  }, [
+    values.isMultiDay,
+    values.scheduledDate,
+    values.scheduledEndDate,
+    workingDays,
+    dailyHoursNum,
+    values.scheduledStartTime,
+    values.includeWeekends,
+    tasks,
+    calendarBlocks,
+    editingTask?.id,
+  ]);
 
   // Escape key handling
   useEffect(() => {
@@ -209,16 +306,38 @@ export function TaskFormModal() {
     e.preventDefault();
     if (isSubmitting) return;
 
-    const validationErrors = validateTaskInput({
-      title: values.title,
-      scheduledDate: values.scheduledDate,
-      scheduledStartTime: values.scheduledStartTime,
-      plannedDurationMinutes: values.plannedDurationMinutes,
-    });
+    const extendedErrors: ValidationErrors & {
+      reminderCustomTime?: string;
+      customOffset?: string;
+      scheduledEndDate?: string;
+      dailyPlannedHours?: string;
+    } = {};
 
-    const extendedErrors: ValidationErrors & { reminderCustomTime?: string; customOffset?: string } = {
-      ...validationErrors,
-    };
+    if (!values.title.trim()) {
+      extendedErrors.title = 'Title is required';
+    }
+
+    if (values.isMultiDay) {
+      if (!values.scheduledDate) {
+        extendedErrors.scheduledDate = 'Start date is required for multi-day tasks';
+      }
+      if (!values.scheduledEndDate) {
+        extendedErrors.scheduledEndDate = 'End date is required for multi-day tasks';
+      } else if (values.scheduledDate && values.scheduledEndDate < values.scheduledDate) {
+        extendedErrors.scheduledEndDate = 'End date cannot be earlier than start date';
+      }
+      if (!values.dailyPlannedHours || parseFloat(values.dailyPlannedHours) <= 0) {
+        extendedErrors.dailyPlannedHours = 'Daily planned hours must be greater than 0';
+      }
+    } else {
+      const validationErrors = validateTaskInput({
+        title: values.title,
+        scheduledDate: values.scheduledDate,
+        scheduledStartTime: values.scheduledStartTime,
+        plannedDurationMinutes: values.plannedDurationMinutes,
+      });
+      Object.assign(extendedErrors, validationErrors);
+    }
 
     // Date-only reminder rule: requires explicit reminder time, never midnight
     if (
@@ -246,9 +365,14 @@ export function TaskFormModal() {
     setIsSubmitting(true);
 
     try {
-      // Unscheduled inbox tasks cannot have reminders
+      let finalPlannedMinutes = values.plannedDurationMinutes;
+      if (values.isMultiDay && workingDays.length > 0) {
+        finalPlannedMinutes = String(totalCalculatedMinutes);
+      }
+
       const finalValues: TaskFormValues = {
         ...values,
+        plannedDurationMinutes: finalPlannedMinutes,
         reminderOffsetMinutes: values.scheduledDate ? values.reminderOffsetMinutes : '',
       };
 
@@ -436,128 +560,376 @@ export function TaskFormModal() {
               )}
             </div>
 
-            {/* Section 2: Schedule & Effort */}
+            {/* Section 2: Schedule & Duration */}
             <div className="space-y-4 pt-2 border-t border-[#F0F3F9]">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#7E8B9B]">
-                <Calendar className="h-3.5 w-3.5 text-[#2F65F6]" />
-                <span>Schedule & Duration</span>
-              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#7E8B9B]">
+                  <Calendar className="h-3.5 w-3.5 text-[#2F65F6]" />
+                  <span>Schedule & Duration</span>
+                </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Scheduled Date */}
-                <FieldWrapper
-                  id="task-modal-date"
-                  label="Scheduled Date"
-                  helperText="Leave empty to save to Inbox."
-                >
-                  <Input
-                    id="task-modal-date"
-                    type="date"
-                    value={values.scheduledDate}
-                    onChange={(e) => {
-                      const nextDate = e.target.value;
+                {/* Scheduling Mode Switcher */}
+                <div className="flex rounded-xl bg-[#F0F3F9] p-1 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() =>
                       setValues((v) => ({
                         ...v,
-                        scheduledDate: nextDate,
-                        scheduledStartTime: nextDate ? v.scheduledStartTime : '',
-                        reminderOffsetMinutes: nextDate ? v.reminderOffsetMinutes : '',
-                      }));
-                      if (nextDate && errors.scheduledStartTime) {
-                        setErrors((prev) => ({ ...prev, scheduledStartTime: '' }));
-                      }
-                    }}
-                    className="h-10 rounded-xl"
-                  />
-                </FieldWrapper>
-
-                {/* Start Time */}
-                <FieldWrapper
-                  id="task-modal-start-time"
-                  label="Start Time (Optional)"
-                  error={errors.scheduledStartTime}
-                  helperText={
-                    values.scheduledDate
-                      ? 'Optional specific start time'
-                      : 'Requires a scheduled date'
-                  }
-                >
-                  <Input
-                    id="task-modal-start-time"
-                    type="time"
-                    disabled={!values.scheduledDate}
-                    value={values.scheduledStartTime}
-                    onChange={(e) => {
-                      setValues((v) => ({
-                        ...v,
-                        scheduledStartTime: e.target.value,
-                      }));
-                      if (errors.scheduledStartTime) {
-                        setErrors((prev) => ({ ...prev, scheduledStartTime: '' }));
-                      }
-                    }}
-                    hasError={Boolean(errors.scheduledStartTime)}
-                    className="h-10 rounded-xl disabled:opacity-40"
-                  />
-                </FieldWrapper>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Planned Duration */}
-                <FieldWrapper
-                  id="task-modal-planned-duration"
-                  label="Planned Duration (minutes)"
-                  error={errors.plannedDurationMinutes}
-                  helperText="Estimated focus effort, e.g. 45, 60, 90 min"
-                >
-                  <Input
-                    id="task-modal-planned-duration"
-                    type="number"
-                    min={1}
-                    max={1440}
-                    step={5}
-                    placeholder="e.g., 60"
-                    value={values.plannedDurationMinutes}
-                    onChange={(e) => {
-                      setValues((v) => ({
-                        ...v,
-                        plannedDurationMinutes: e.target.value,
-                      }));
-                      if (errors.plannedDurationMinutes) {
-                        setErrors((prev) => ({
-                          ...prev,
-                          plannedDurationMinutes: '',
-                        }));
-                      }
-                    }}
-                    hasError={Boolean(errors.plannedDurationMinutes)}
-                    className="h-10 rounded-xl"
-                  />
-                </FieldWrapper>
-
-                {/* Remaining Estimate (for projects or edit mode) */}
-                <FieldWrapper
-                  id="task-modal-remaining-estimate"
-                  label="Remaining Estimate (minutes)"
-                  helperText="Manual estimate for client progress tracking"
-                >
-                  <Input
-                    id="task-modal-remaining-estimate"
-                    type="number"
-                    min={0}
-                    max={1440}
-                    step={5}
-                    placeholder={values.plannedDurationMinutes || 'Optional remaining min'}
-                    value={values.remainingEstimateMinutes ?? ''}
-                    onChange={(e) =>
-                      setValues((v) => ({
-                        ...v,
-                        remainingEstimateMinutes: e.target.value,
+                        isMultiDay: false,
+                        scheduledEndDate: '',
                       }))
                     }
-                    className="h-10 rounded-xl"
-                  />
-                </FieldWrapper>
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      !values.isMultiDay
+                        ? 'bg-white text-[#1A1F2C] shadow-xs font-bold'
+                        : 'text-[#7E8B9B] hover:text-[#1A1F2C]'
+                    }`}
+                  >
+                    Single Day
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setValues((v) => ({
+                        ...v,
+                        isMultiDay: true,
+                        scheduledDate: v.scheduledDate || getLocalDateISO(),
+                        scheduledEndDate: v.scheduledEndDate || v.scheduledDate || getLocalDateISO(),
+                        dailyPlannedHours: v.dailyPlannedHours || '4',
+                        scheduledStartTime: v.scheduledStartTime || '09:00',
+                      }))
+                    }
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      values.isMultiDay
+                        ? 'bg-[#2F65F6] text-white shadow-xs font-bold'
+                        : 'text-[#7E8B9B] hover:text-[#1A1F2C]'
+                    }`}
+                  >
+                    <CalendarRange className="h-3.5 w-3.5" />
+                    <span>Multi-Day</span>
+                  </button>
+                </div>
               </div>
+
+              {!values.isMultiDay ? (
+                /* Single Day Scheduling */
+                <>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {/* Scheduled Date */}
+                    <FieldWrapper
+                      id="task-modal-date"
+                      label="Scheduled Date"
+                      helperText="Leave empty to save to Inbox."
+                    >
+                      <Input
+                        id="task-modal-date"
+                        type="date"
+                        value={values.scheduledDate}
+                        onChange={(e) => {
+                          const nextDate = e.target.value;
+                          setValues((v) => ({
+                            ...v,
+                            scheduledDate: nextDate,
+                            scheduledStartTime: nextDate ? v.scheduledStartTime : '',
+                            reminderOffsetMinutes: nextDate ? v.reminderOffsetMinutes : '',
+                          }));
+                          if (nextDate && errors.scheduledStartTime) {
+                            setErrors((prev) => ({ ...prev, scheduledStartTime: '' }));
+                          }
+                        }}
+                        className="h-10 rounded-xl"
+                      />
+                    </FieldWrapper>
+
+                    {/* Start Time */}
+                    <FieldWrapper
+                      id="task-modal-start-time"
+                      label="Start Time (Optional)"
+                      error={errors.scheduledStartTime}
+                      helperText={
+                        values.scheduledDate
+                          ? 'Optional specific start time'
+                          : 'Requires a scheduled date'
+                      }
+                    >
+                      <Input
+                        id="task-modal-start-time"
+                        type="time"
+                        disabled={!values.scheduledDate}
+                        value={values.scheduledStartTime}
+                        onChange={(e) => {
+                          setValues((v) => ({
+                            ...v,
+                            scheduledStartTime: e.target.value,
+                          }));
+                          if (errors.scheduledStartTime) {
+                            setErrors((prev) => ({ ...prev, scheduledStartTime: '' }));
+                          }
+                        }}
+                        hasError={Boolean(errors.scheduledStartTime)}
+                        className="h-10 rounded-xl disabled:opacity-40"
+                      />
+                    </FieldWrapper>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {/* Planned Duration */}
+                    <FieldWrapper
+                      id="task-modal-planned-duration"
+                      label="Planned Duration (minutes)"
+                      error={errors.plannedDurationMinutes}
+                      helperText="Estimated focus effort, e.g. 45, 60, 90 min"
+                    >
+                      <Input
+                        id="task-modal-planned-duration"
+                        type="number"
+                        min={1}
+                        max={1440}
+                        step={5}
+                        placeholder="e.g., 60"
+                        value={values.plannedDurationMinutes}
+                        onChange={(e) => {
+                          setValues((v) => ({
+                            ...v,
+                            plannedDurationMinutes: e.target.value,
+                          }));
+                          if (errors.plannedDurationMinutes) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              plannedDurationMinutes: '',
+                            }));
+                          }
+                        }}
+                        hasError={Boolean(errors.plannedDurationMinutes)}
+                        className="h-10 rounded-xl"
+                      />
+                    </FieldWrapper>
+
+                    {/* Remaining Estimate (for projects or edit mode) */}
+                    <FieldWrapper
+                      id="task-modal-remaining-estimate"
+                      label="Remaining Estimate (minutes)"
+                      helperText="Manual estimate for client progress tracking"
+                    >
+                      <Input
+                        id="task-modal-remaining-estimate"
+                        type="number"
+                        min={0}
+                        max={1440}
+                        step={5}
+                        placeholder={values.plannedDurationMinutes || 'Optional remaining min'}
+                        value={values.remainingEstimateMinutes ?? ''}
+                        onChange={(e) =>
+                          setValues((v) => ({
+                            ...v,
+                            remainingEstimateMinutes: e.target.value,
+                          }))
+                        }
+                        className="h-10 rounded-xl"
+                      />
+                    </FieldWrapper>
+                  </div>
+                </>
+              ) : (
+                /* Multi-Day Scheduling */
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {/* Start Date */}
+                    <FieldWrapper
+                      id="task-modal-start-date"
+                      label="Start Date"
+                      required
+                      error={errors.scheduledDate}
+                    >
+                      <Input
+                        id="task-modal-start-date"
+                        type="date"
+                        value={values.scheduledDate}
+                        onChange={(e) => {
+                          const nextDate = e.target.value;
+                          setValues((v) => ({
+                            ...v,
+                            scheduledDate: nextDate,
+                            scheduledEndDate:
+                              v.scheduledEndDate && v.scheduledEndDate < nextDate
+                                ? nextDate
+                                : v.scheduledEndDate || nextDate,
+                          }));
+                          if (errors.scheduledDate) {
+                            setErrors((prev) => ({ ...prev, scheduledDate: '' }));
+                          }
+                        }}
+                        hasError={Boolean(errors.scheduledDate)}
+                        className="h-10 rounded-xl"
+                      />
+                    </FieldWrapper>
+
+                    {/* End Date */}
+                    <FieldWrapper
+                      id="task-modal-end-date"
+                      label="End Date"
+                      required
+                      error={errors.scheduledEndDate}
+                    >
+                      <Input
+                        id="task-modal-end-date"
+                        type="date"
+                        min={values.scheduledDate}
+                        value={values.scheduledEndDate || ''}
+                        onChange={(e) => {
+                          setValues((v) => ({
+                            ...v,
+                            scheduledEndDate: e.target.value,
+                          }));
+                          if (errors.scheduledEndDate) {
+                            setErrors((prev) => ({ ...prev, scheduledEndDate: '' }));
+                          }
+                        }}
+                        hasError={Boolean(errors.scheduledEndDate)}
+                        className="h-10 rounded-xl"
+                      />
+                    </FieldWrapper>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {/* Daily Planned Effort (hours) */}
+                    <FieldWrapper
+                      id="task-modal-daily-hours"
+                      label="Daily Planned Effort (hours)"
+                      required
+                      error={errors.dailyPlannedHours}
+                      helperText="Target hours allocated per working day"
+                    >
+                      <Input
+                        id="task-modal-daily-hours"
+                        type="number"
+                        min={0.5}
+                        max={16}
+                        step={0.5}
+                        placeholder="e.g., 4"
+                        value={values.dailyPlannedHours || '4'}
+                        onChange={(e) => {
+                          setValues((v) => ({
+                            ...v,
+                            dailyPlannedHours: e.target.value,
+                          }));
+                          if (errors.dailyPlannedHours) {
+                            setErrors((prev) => ({ ...prev, dailyPlannedHours: '' }));
+                          }
+                        }}
+                        hasError={Boolean(errors.dailyPlannedHours)}
+                        className="h-10 rounded-xl"
+                      />
+                    </FieldWrapper>
+
+                    {/* Preferred Daily Start Time */}
+                    <FieldWrapper
+                      id="task-modal-preferred-start-time"
+                      label="Preferred Start Time"
+                      helperText="Default time for daily calendar blocks"
+                    >
+                      <Input
+                        id="task-modal-preferred-start-time"
+                        type="time"
+                        value={values.scheduledStartTime || '09:00'}
+                        onChange={(e) =>
+                          setValues((v) => ({
+                            ...v,
+                            scheduledStartTime: e.target.value,
+                          }))
+                        }
+                        className="h-10 rounded-xl"
+                      />
+                    </FieldWrapper>
+                  </div>
+
+                  {/* Skip Weekends Option */}
+                  <div className="flex items-center justify-between rounded-xl border border-[#E9ECF5] bg-[#F8FAFD] p-3.5">
+                    <div className="space-y-0.5">
+                      <label
+                        htmlFor="task-modal-skip-weekends"
+                        className="text-xs font-semibold text-[#1A1C20] cursor-pointer block"
+                      >
+                        Skip Weekends (Saturday & Sunday)
+                      </label>
+                      <p className="text-[11px] text-[#7E8B9B]">
+                        When enabled, only Monday through Friday are scheduled as working days.
+                      </p>
+                    </div>
+                    <input
+                      id="task-modal-skip-weekends"
+                      type="checkbox"
+                      checked={!values.includeWeekends}
+                      onChange={(e) =>
+                        setValues((v) => ({ ...v, includeWeekends: !e.target.checked }))
+                      }
+                      className="h-4 w-4 rounded border-gray-300 text-[#2F65F6] focus:ring-[#2F65F6] cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Live Calculation & Feasibility Banner */}
+                  {values.scheduledDate &&
+                    values.scheduledEndDate &&
+                    values.scheduledEndDate >= values.scheduledDate && (
+                      <div className="rounded-xl border border-[#DDE7FD] bg-[#EDF2FE]/60 p-4 text-xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                          <span className="font-bold text-[#1A1F2C] flex items-center gap-1.5">
+                            <CalendarRange className="h-4 w-4 text-[#2F65F6]" />
+                            <span>Calculated Workload Allocation</span>
+                          </span>
+                          <span className="font-bold text-[#2F65F6] text-sm tabular-nums-strict">
+                            {totalCalculatedHours} hrs total ({totalCalculatedMinutes} min)
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[#4A5568]">
+                          {workingDays.length} working day{workingDays.length === 1 ? '' : 's'} ×{' '}
+                          {dailyHoursNum}h/day ={' '}
+                          <strong className="text-[#1A1F2C]">
+                            {totalCalculatedHours} total planned hours
+                          </strong>{' '}
+                          allocated across separate daily calendar blocks.
+                        </p>
+
+                        {/* Live Schedule Feasibility & Conflict Check */}
+                        {schedulePlanPreview && (
+                          <div className="mt-3 pt-2.5 border-t border-[#DDE7FD]/80">
+                            {schedulePlanPreview.conflicts.some((c) => c.conflictType === 'insufficient_time') ? (
+                              <div className="flex items-start gap-2 text-rose-700">
+                                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                                <span>
+                                  {schedulePlanPreview.conflicts.find((c) => c.conflictType === 'insufficient_time')?.message ||
+                                    `Daily effort (${dailyHoursNum}h) exceeds available working hours. Please reduce daily hours.`}
+                                </span>
+                              </div>
+                            ) : schedulePlanPreview.hasConflict ? (
+                              <div className="flex items-start gap-2 text-amber-800">
+                                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                                <div>
+                                  <span className="font-semibold">
+                                    Time overlap detected on preferred start time.
+                                  </span>
+                                  <p className="mt-0.5 text-[11px] text-amber-700">
+                                    {schedulePlanPreview.conflicts[0]?.suggestedSlot
+                                      ? `Overlaps with existing scheduled event on ${schedulePlanPreview.conflicts[0].date}. Suggested alternate slot: ${schedulePlanPreview.conflicts[0].suggestedSlot.startTime} – ${schedulePlanPreview.conflicts[0].suggestedSlot.endTime}.`
+                                      : 'Blocks will be assigned to next available working slots.'}
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                  All {workingDays.length} daily time blocks fit cleanly into your
+                                  working schedule.
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                </div>
+              )}
             </div>
 
             {/* Section 3: Reminders */}
@@ -736,23 +1108,47 @@ export function TaskFormModal() {
 
         {/* Sticky Footer */}
         <div className="flex items-center justify-between gap-3 border-t border-[#E9ECF5] bg-[#F8FAFD] px-6 py-4 shrink-0">
-          <Button variant="ghost" onClick={handleSafeClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
+          <div>
+            {editingTask ? (
+              <Button
+                variant="destructive"
+                type="button"
+                onClick={() => {
+                  closeTaskDrawer();
+                  requestDeleteTask(editingTask);
+                }}
+                className="gap-1.5"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete Task</span>
+              </Button>
+            ) : (
+              <Button variant="ghost" onClick={handleSafeClose} disabled={isSubmitting}>
+                Cancel
+              </Button>
+            )}
+          </div>
 
-          <Button
-            variant="primary"
-            type="submit"
-            form="task-modal-form"
-            disabled={isSubmitting}
-            className="px-6 shadow-sm"
-          >
-            {isSubmitting
-              ? 'Saving...'
-              : editingTask
-              ? 'Save Changes'
-              : 'Create Task'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {editingTask && (
+              <Button variant="ghost" onClick={handleSafeClose} disabled={isSubmitting}>
+                Cancel
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              type="submit"
+              form="task-modal-form"
+              disabled={isSubmitting}
+              className="px-6 shadow-sm"
+            >
+              {isSubmitting
+                ? 'Saving...'
+                : editingTask
+                ? 'Save Changes'
+                : 'Create Task'}
+            </Button>
+          </div>
         </div>
       </div>
 

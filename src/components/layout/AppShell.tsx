@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
+  Calendar,
   CheckSquare,
   ChevronDown,
   Home,
@@ -26,12 +27,14 @@ import { formatClockHHMMSS, getLocalDateISO } from '../../lib/timeMath';
 import { OfflineIndicator } from '../pwa/OfflineIndicator';
 import { PWAInstallButton } from '../pwa/PWAInstallButton';
 import { TaskFormModal } from '../tasks/TaskFormModal';
+import { DeleteTaskModal } from '../tasks/DeleteTaskModal';
 import { ManualTimeEntryModal } from '../timer/ManualTimeEntryModal';
 import { TimerConfirmationModals } from '../timer/TimerConfirmationModals';
 import { Button } from '../ui/Button';
 
 const PRIMARY_NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
+  { to: '/calendar', label: 'Calendar', icon: Calendar },
   { to: '/tasks', label: 'My Tasks', icon: CheckSquare },
   { to: '/projects', label: 'Projects', icon: Layers },
   { to: '/inbox', label: 'Inbox', icon: Inbox, showUnread: true },
@@ -391,6 +394,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Global Modals */}
       <TaskFormModal />
+      <DeleteTaskModal />
       <ManualTimeEntryModal />
       <TimerConfirmationModals />
 

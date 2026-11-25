@@ -22,6 +22,7 @@ import { AcceptInvitationPage } from './features/portal/AcceptInvitationPage';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { GoogleCalendarPage } from './features/settings/GoogleCalendarPage';
 import { NativeTimerConnectPage } from './features/settings/NativeTimerConnectPage';
+import { CalendarPage } from './features/calendar/CalendarPage';
 
 function LoginRedirect() {
   const location = useLocation();
@@ -63,7 +64,7 @@ function WorkspaceRoutes() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/settings/google-calendar" element={<GoogleCalendarPage />} />
           <Route path="/settings/integrations/google-calendar" element={<GoogleCalendarPage />} />
-          <Route path="/calendar" element={<Navigate to="/settings/integrations/google-calendar" replace />} />
+          <Route path="/calendar" element={<CalendarPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </AppShell>

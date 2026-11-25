@@ -706,6 +706,53 @@ export type Database = {
           },
         ]
       }
+      task_calendar_blocks: {
+        Row: {
+          block_date: string
+          created_at: string
+          duration_minutes: number
+          end_time: string
+          id: string
+          start_time: string
+          status: string
+          task_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          block_date: string
+          created_at?: string
+          duration_minutes: number
+          end_time: string
+          id?: string
+          start_time: string
+          status?: string
+          task_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          block_date?: string
+          created_at?: string
+          duration_minutes?: number
+          end_time?: string
+          id?: string
+          start_time?: string
+          status?: string
+          task_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_calendar_blocks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           calendar_sync_status: string
@@ -721,6 +768,9 @@ export type Database = {
           remaining_estimate_minutes: number | null
           reminder_offset_minutes: number | null
           scheduled_date: string | null
+          scheduled_end_date?: string | null
+          daily_planned_minutes?: number | null
+          include_weekends?: boolean
           scheduled_start_time: string | null
           sort_order: number
           status: string
@@ -743,6 +793,9 @@ export type Database = {
           remaining_estimate_minutes?: number | null
           reminder_offset_minutes?: number | null
           scheduled_date?: string | null
+          scheduled_end_date?: string | null
+          daily_planned_minutes?: number | null
+          include_weekends?: boolean
           scheduled_start_time?: string | null
           sort_order?: number
           status?: string
@@ -765,6 +818,9 @@ export type Database = {
           remaining_estimate_minutes?: number | null
           reminder_offset_minutes?: number | null
           scheduled_date?: string | null
+          scheduled_end_date?: string | null
+          daily_planned_minutes?: number | null
+          include_weekends?: boolean
           scheduled_start_time?: string | null
           sort_order?: number
           status?: string

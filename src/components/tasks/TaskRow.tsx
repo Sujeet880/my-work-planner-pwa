@@ -1,5 +1,18 @@
-import { Link } from 'react-router-dom';
-import { Calendar, Check, Folder, MoreHorizontal, Pause, Play } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Calendar,
+  CalendarRange,
+  Check,
+  ExternalLink,
+  Folder,
+  MoreHorizontal,
+  Pause,
+  Pencil,
+  Play,
+  Trash2,
+} from 'lucide-react';
+import { useWorkspace } from '../../context/WorkspaceContext';
 import {
   calculateLiveActualSeconds,
   formatDuration,
@@ -34,6 +47,22 @@ export function TaskRow({
   onEditTask,
   compact = false,
 }: TaskRowProps) {
+  const { requestDeleteTask } = useWorkspace();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
   const todayIso = getLocalDateISO();
   const isCompleted = task.status === 'completed';
   const overdue = isTaskOverdue(task, todayIso);
@@ -45,6 +74,16 @@ export function TaskRow({
     ? formatDuration(task.plannedDurationMinutes * 60)
     : '—';
   const actualLabel = formatDuration(liveActualSeconds);
+
+  const isMultiDay = Boolean(
+    task.scheduledEndDate &&
+    task.scheduledDate &&
+    task.scheduledEndDate > task.scheduledDate
+  );
+
+  const dailyHours = task.dailyPlannedMinutes
+    ? `${task.dailyPlannedMinutes / 60}h/day`
+    : '';
 
   const scheduleText = task.scheduledDate
     ? task.scheduledDate === todayIso
@@ -58,7 +97,7 @@ export function TaskRow({
 
   return (
     <div
-      className={`group flex items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 transition-all ${
+      className={`group relative flex items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 transition-all ${
         isThisTaskActive
           ? 'border-[#2F65F6]/40 bg-[#EDF2FE]/40 shadow-xs'
           : 'border-[#E9ECF5] bg-white hover:border-[#D0D5DD] hover:bg-[#F9FAFD]/70'
@@ -105,10 +144,20 @@ export function TaskRow({
               <span className="text-[#98A2B3]">No project</span>
             )}
 
-            <span className="inline-flex items-center gap-1 tabular-nums-strict">
-              <Calendar className="h-3 w-3 text-[#98A2B3]" aria-hidden="true" />
-              <span className={overdue ? 'font-medium text-[#C2414B]' : ''}>{scheduleText}</span>
-            </span>
+            {isMultiDay ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-[#EDF2FE] px-2 py-0.5 text-[11px] font-semibold text-[#2F65F6] border border-[#DDE7FD] tabular-nums-strict">
+                <CalendarRange className="h-3 w-3" />
+                <span>
+                  {task.scheduledDate} – {task.scheduledEndDate}
+                  {dailyHours ? ` · ${dailyHours}` : ''}
+                </span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 tabular-nums-strict">
+                <Calendar className="h-3 w-3 text-[#98A2B3]" aria-hidden="true" />
+                <span className={overdue ? 'font-medium text-[#C2414B]' : ''}>{scheduleText}</span>
+              </span>
+            )}
 
             <PriorityBadge priority={task.priority} />
             {!compact && <StatusBadge status={task.status} isOverdue={overdue} />}
@@ -156,14 +205,59 @@ export function TaskRow({
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={() => onEditTask(task)}
-          aria-label={`Edit "${task.title}"`}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-[#98A2B3] hover:bg-[#F0F2F5] hover:text-[#1A1F2C] transition-colors cursor-pointer"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
+        {/* Action Menu (...) */}
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((prev) => !prev)}
+            aria-label={`Task actions for "${task.title}"`}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#98A2B3] hover:bg-[#F0F2F5] hover:text-[#1A1F2C] transition-colors cursor-pointer"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 top-full z-30 mt-1 w-44 rounded-xl border border-[#E9ECF5] bg-white py-1.5 shadow-[0_10px_25px_rgba(0,0,0,0.1)] backdrop-blur-md animate-in fade-in zoom-in-95 duration-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onEditTask(task);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-[#1A1F2C] hover:bg-[#F8FAFD] cursor-pointer"
+              >
+                <Pencil className="h-3.5 w-3.5 text-[#7E8B9B]" />
+                <span>Edit Task</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  navigate(`/tasks/${task.id}`);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-[#1A1F2C] hover:bg-[#F8FAFD] cursor-pointer"
+              >
+                <ExternalLink className="h-3.5 w-3.5 text-[#7E8B9B]" />
+                <span>View Details</span>
+              </button>
+
+              <div className="my-1 border-t border-[#F0F3F9]" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  requestDeleteTask(task);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Delete Task</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

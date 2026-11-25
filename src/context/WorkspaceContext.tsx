@@ -9,12 +9,14 @@ import { projectService, type SaveProjectInput } from '../services/projectServic
 import { taskService } from '../services/taskService';
 import { timerService } from '../services/timerService';
 import { calendarService } from '../services/calendarService';
+import { calculateSchedulePlan } from '../services/schedulingEngine';
 import type {
   ActiveTimerState,
   CalendarConnection,
   Profile,
   Project,
   Task,
+  TaskCalendarBlock,
   TaskFormValues,
   TimeEntry,
 } from '../types/models';
@@ -69,6 +71,8 @@ export interface WorkspaceContextValue {
   isSyncingCalendar: boolean;
   projects: Project[];
   tasks: Task[];
+  calendarBlocks: TaskCalendarBlock[];
+  refreshCalendarBlocks: () => Promise<void>;
   timeEntries: TimeEntry[];
   activeTimer: ActiveTimerState | null;
   nowMs: number;
@@ -95,6 +99,13 @@ export interface WorkspaceContextValue {
   manualEntryDefaultTaskId: string | null;
   openManualEntryModal: (defaultTaskId?: string | null) => void;
   closeManualEntryModal: () => void;
+
+  // Delete task confirmation modal
+  deleteTaskModalOpen: boolean;
+  taskPendingDelete: Task | null;
+  requestDeleteTask: (task: Task) => void;
+  closeDeleteTaskModal: () => void;
+  confirmDeleteTask: () => void;
 
   // Confirmation dialog states
   pendingSwitch: PendingTimerSwitch | null;
@@ -157,6 +168,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [isSyncingCalendar, setIsSyncingCalendar] = useState<boolean>(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [calendarBlocks, setCalendarBlocks] = useState<TaskCalendarBlock[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [activeTimer, setActiveTimer] = useState<ActiveTimerState | null>(null);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
@@ -166,6 +178,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [taskDrawerDefaultDate, setTaskDrawerDefaultDate] = useState<string | null>(null);
+
+  const [deleteTaskModalOpen, setDeleteTaskModalOpen] = useState(false);
+  const [taskPendingDelete, setTaskPendingDelete] = useState<Task | null>(null);
 
   const [manualEntryModalOpen, setManualEntryModalOpen] = useState(false);
   const [manualEntryDefaultTaskId, setManualEntryDefaultTaskId] = useState<string | null>(null);
@@ -206,12 +221,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     async (userId: string) => {
       setIsLoadingData(true);
       try {
-        const [tasksRes, projectsRes, timerRes, sessionsRes, calendarRes] = await Promise.all([
+        const [tasksRes, projectsRes, timerRes, sessionsRes, calendarRes, blocksRes] = await Promise.all([
           taskService.fetchTasks(userId),
           projectService.fetchProjects(userId),
           timerService.fetchActiveTimer(userId),
           timerService.fetchWorkSessions(userId),
           calendarService.getIntegrationStatus(userId),
+          taskService.fetchCalendarBlocks(userId),
         ]);
 
         if (tasksRes.error) {
@@ -224,6 +240,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           showToast(`Could not load projects from database: ${projectsRes.error}`, 'warning');
         } else if (projectsRes.data) {
           setProjects(projectsRes.data);
+        }
+
+        if (blocksRes.data) {
+          setCalendarBlocks(blocksRes.data);
         }
 
         if (timerRes.error) {
@@ -274,12 +294,22 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       // Clear data on logout or unauthenticated session to prevent data leakage.
       // Production must NEVER substitute fake, sample, or dummy preview data.
       setTasks([]);
+      setCalendarBlocks([]);
       setProjects([]);
       setTimeEntries([]);
       setActiveTimer(null);
       setCalendarConnection(INITIAL_EMPTY_CALENDAR_CONNECTION);
     }
   }, [isAuthenticated, user?.id, loadUserData]);
+
+  const refreshCalendarBlocks = useCallback(async () => {
+    const currentUserId = user?.id || profile.id;
+    if (!currentUserId) return;
+    const res = await taskService.fetchCalendarBlocks(currentUserId);
+    if (res.data) {
+      setCalendarBlocks(res.data);
+    }
+  }, [profile.id, user?.id]);
 
   const refreshData = useCallback(async () => {
     if (user?.id) {
@@ -654,15 +684,37 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         scheduledDate && values.scheduledStartTime.trim()
           ? values.scheduledStartTime.trim()
           : null;
-      const plannedMinutes = values.plannedDurationMinutes.trim()
-        ? Math.max(1, parseInt(values.plannedDurationMinutes, 10) || 0)
-        : null;
       const reminderOffset =
         scheduledDate && values.reminderOffsetMinutes.trim()
           ? parseInt(values.reminderOffsetMinutes, 10) || null
           : null;
 
       const shouldSync = Boolean(scheduledDate && (values.syncToGoogleCalendar ?? true));
+
+      const isMultiDay = Boolean(
+        values.isMultiDay ||
+        (values.scheduledEndDate && values.scheduledDate && values.scheduledEndDate > values.scheduledDate)
+      );
+      const scheduledEndDate = isMultiDay ? (values.scheduledEndDate?.trim() || null) : null;
+      const dailyPlannedMinutes = isMultiDay && values.dailyPlannedHours?.trim()
+        ? Math.round(parseFloat(values.dailyPlannedHours) * 60)
+        : null;
+      const includeWeekends = values.includeWeekends ?? false;
+
+      let plannedMinutes = values.plannedDurationMinutes?.trim()
+        ? Math.max(1, parseInt(values.plannedDurationMinutes, 10) || 0)
+        : null;
+
+      if (isMultiDay && scheduledDate && scheduledEndDate && dailyPlannedMinutes) {
+        const plan = calculateSchedulePlan({
+          startDate: scheduledDate,
+          endDate: scheduledEndDate,
+          dailyPlannedHours: dailyPlannedMinutes / 60,
+          preferredStartTime: scheduledStartTime || '09:00',
+          includeWeekends,
+        });
+        plannedMinutes = plan.totalPlannedMinutes;
+      }
 
       if (existingTaskId) {
         const prevTask = tasks.find((t) => t.id === existingTaskId);
@@ -676,6 +728,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           priority: values.priority,
           status: taskStatus,
           scheduledDate,
+          scheduledEndDate,
+          dailyPlannedMinutes,
+          includeWeekends,
           scheduledStartTime,
           plannedDurationMinutes: plannedMinutes,
           remainingEstimateMinutes: values.remainingEstimateMinutes?.trim()
@@ -693,6 +748,35 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
         setTasks((prev) => prev.map((t) => (t.id === existingTaskId ? updatedTask : t)));
 
+        // Optimistically update calendar blocks
+        if (scheduledDate) {
+          const plan = calculateSchedulePlan({
+            startDate: scheduledDate,
+            endDate: scheduledEndDate || scheduledDate,
+            dailyPlannedHours: dailyPlannedMinutes ? dailyPlannedMinutes / 60 : (plannedMinutes ? plannedMinutes / 60 : 1),
+            preferredStartTime: scheduledStartTime || '09:00',
+            includeWeekends,
+          });
+          const optimisticBlocks: TaskCalendarBlock[] = plan.blocks.map((b, idx) => ({
+            id: `temp-block-${existingTaskId}-${idx}-${Date.now()}`,
+            userId: currentUserId,
+            taskId: existingTaskId,
+            blockDate: b.date,
+            startTime: b.startTime,
+            endTime: b.endTime,
+            durationMinutes: b.durationMinutes,
+            status: 'scheduled',
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          }));
+          setCalendarBlocks((prev) => [
+            ...prev.filter((b) => b.taskId !== existingTaskId),
+            ...optimisticBlocks,
+          ]);
+        } else {
+          setCalendarBlocks((prev) => prev.filter((b) => b.taskId !== existingTaskId));
+        }
+
         if (isAuthenticated && user?.id) {
           taskService.updateTask(user.id, existingTaskId, values).then((res) => {
             if (res.error) {
@@ -702,6 +786,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
               }
             } else if (res.data) {
               setTasks((prev) => prev.map((t) => (t.id === existingTaskId ? res.data! : t)));
+              refreshCalendarBlocks();
             }
           });
         }
@@ -721,6 +806,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         priority: values.priority,
         status: values.status || 'todo',
         scheduledDate,
+        scheduledEndDate,
+        dailyPlannedMinutes,
+        includeWeekends,
         scheduledStartTime,
         plannedDurationMinutes: plannedMinutes,
         remainingEstimateMinutes: values.remainingEstimateMinutes?.trim()
@@ -738,13 +826,39 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       setTasks((prev) => [newTask, ...prev]);
 
+      // Optimistically allocate calendar blocks for new task
+      if (scheduledDate) {
+        const plan = calculateSchedulePlan({
+          startDate: scheduledDate,
+          endDate: scheduledEndDate || scheduledDate,
+          dailyPlannedHours: dailyPlannedMinutes ? dailyPlannedMinutes / 60 : (plannedMinutes ? plannedMinutes / 60 : 1),
+          preferredStartTime: scheduledStartTime || '09:00',
+          includeWeekends,
+        });
+        const optimisticBlocks: TaskCalendarBlock[] = plan.blocks.map((b, idx) => ({
+          id: `temp-block-${tempId}-${idx}-${Date.now()}`,
+          userId: currentUserId,
+          taskId: tempId,
+          blockDate: b.date,
+          startTime: b.startTime,
+          endTime: b.endTime,
+          durationMinutes: b.durationMinutes,
+          status: 'scheduled',
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        }));
+        setCalendarBlocks((prev) => [...prev, ...optimisticBlocks]);
+      }
+
       if (isAuthenticated && user?.id) {
         taskService.createTask(user.id, values).then((res) => {
           if (res.error) {
             showToast(`Error creating task: ${res.error}`, 'warning');
             setTasks((prev) => prev.filter((t) => t.id !== tempId));
+            setCalendarBlocks((prev) => prev.filter((b) => b.taskId !== tempId));
           } else if (res.data) {
             setTasks((prev) => prev.map((t) => (t.id === tempId ? res.data! : t)));
+            refreshCalendarBlocks();
           }
         });
       }
@@ -752,7 +866,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       showToast('Task created.', 'success');
       return newTask;
     },
-    [isAuthenticated, profile.id, showToast, tasks, user?.id]
+    [isAuthenticated, profile.id, refreshCalendarBlocks, showToast, tasks, user?.id]
   );
 
   const toggleTaskCompletion = useCallback(
@@ -895,10 +1009,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const deleteTask = useCallback(
     (taskId: string) => {
       const prevTasks = [...tasks];
+      const prevBlocks = [...calendarBlocks];
       if (activeTimer?.taskId === taskId) {
         setActiveTimer(null);
       }
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setCalendarBlocks((prev) => prev.filter((b) => b.taskId !== taskId));
       // Invariant: historical work sessions are NEVER deleted when a task is deleted!
       // They remain associated or disassociated with empty taskId for reports.
       setTimeEntries((prev) =>
@@ -910,14 +1026,33 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           if (res.error) {
             showToast(`Error deleting task: ${res.error}`, 'warning');
             setTasks(prevTasks);
+            setCalendarBlocks(prevBlocks);
           }
         });
       }
 
       showToast('Task permanently deleted. Historical work sessions preserved.', 'warning');
     },
-    [activeTimer, isAuthenticated, showToast, tasks, user?.id]
+    [activeTimer, calendarBlocks, isAuthenticated, showToast, tasks, user?.id]
   );
+
+  const requestDeleteTask = useCallback((task: Task) => {
+    setTaskPendingDelete(task);
+    setDeleteTaskModalOpen(true);
+  }, []);
+
+  const closeDeleteTaskModal = useCallback(() => {
+    setDeleteTaskModalOpen(false);
+    setTaskPendingDelete(null);
+  }, []);
+
+  const confirmDeleteTask = useCallback(() => {
+    if (!taskPendingDelete) return;
+    const id = taskPendingDelete.id;
+    deleteTask(id);
+    setDeleteTaskModalOpen(false);
+    setTaskPendingDelete(null);
+  }, [deleteTask, taskPendingDelete]);
 
   const scheduleTaskToDate = useCallback(
     (taskId: string, dateIso: string | null) => {
@@ -1239,6 +1374,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       isSyncingCalendar,
       projects,
       tasks,
+      calendarBlocks,
+      refreshCalendarBlocks,
       timeEntries,
       activeTimer,
       nowMs,
@@ -1260,6 +1397,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       manualEntryDefaultTaskId,
       openManualEntryModal,
       closeManualEntryModal,
+      deleteTaskModalOpen,
+      taskPendingDelete,
+      requestDeleteTask,
+      closeDeleteTaskModal,
+      confirmDeleteTask,
       pendingSwitch,
       cancelTimerSwitch: () => setPendingSwitch(null),
       confirmSaveAndSwitch,
@@ -1293,13 +1435,17 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       activeTimer,
       addManualTimeEntry,
       archiveTask,
+      calendarBlocks,
       calendarConnection,
+      closeDeleteTaskModal,
       closeManualEntryModal,
       closeTaskDrawer,
+      confirmDeleteTask,
       confirmSaveAndSwitch,
       confirmStopSaveAndComplete,
       deleteProject,
       deleteTask,
+      deleteTaskModalOpen,
       deleteTimeEntry,
       editingTask,
       globalSearchQuery,
@@ -1316,8 +1462,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       pendingSwitch,
       profile,
       projects,
+      refreshCalendarBlocks,
       refreshCalendarStatus,
       refreshData,
+      requestDeleteTask,
       resumeActiveTimer,
       retryCalendarSync,
       saveProject,
@@ -1327,6 +1475,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       stopAndSaveActiveTimer,
       taskDrawerDefaultDate,
       taskDrawerOpen,
+      taskPendingDelete,
       tasks,
       timeEntries,
       toast,

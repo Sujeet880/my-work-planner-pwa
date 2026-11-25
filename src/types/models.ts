@@ -8,6 +8,21 @@ export type TimeEntryStatus = 'running' | 'paused' | 'completed';
 
 export type CalendarSyncStatus = 'not_synced' | 'synced' | 'pending' | 'failed';
 
+export type CalendarBlockStatus = 'scheduled' | 'completed' | 'cancelled';
+
+export interface TaskCalendarBlock {
+  id: string;
+  userId: string;
+  taskId: string;
+  blockDate: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  durationMinutes: number; // Duration of this specific block (e.g. 240 for 4 hours)
+  status: CalendarBlockStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type DateFormatPreference = 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
 
 export type TimeFormatPreference = '12h' | '24h';
@@ -85,9 +100,12 @@ export interface Task {
   description?: string;
   priority: TaskPriority;
   status: TaskStatus;
-  scheduledDate: string | null; // YYYY-MM-DD or null (Inbox)
-  scheduledStartTime: string | null; // HH:mm or null (requires scheduledDate)
-  plannedDurationMinutes: number | null; // Positive integer or null
+  scheduledDate: string | null; // Start Date (YYYY-MM-DD or null for Inbox)
+  scheduledEndDate?: string | null; // Multi-day End Date (YYYY-MM-DD)
+  scheduledStartTime: string | null; // Preferred HH:mm or null (requires scheduledDate)
+  dailyPlannedMinutes?: number | null; // Workload allocated per scheduled day
+  includeWeekends?: boolean; // Whether weekends are included in multi-day scheduling
+  plannedDurationMinutes: number | null; // Total planned minutes (single-day or multi-day cumulative)
   remainingEstimateMinutes?: number | null;
   reminderOffsetMinutes: number | null; // e.g., 15, 30, 60, or null
   syncToGoogleCalendar: boolean;
@@ -144,9 +162,13 @@ export interface TaskFormValues {
   projectId: string | null;
   priority: TaskPriority;
   status?: TaskStatus;
-  scheduledDate: string;
-  scheduledStartTime: string;
-  plannedDurationMinutes: string;
+  scheduledDate: string; // Start date
+  scheduledEndDate?: string; // End date (for multi-day scheduling)
+  isMultiDay?: boolean;
+  dailyPlannedHours?: string; // e.g. "4" or "4.5"
+  includeWeekends?: boolean;
+  scheduledStartTime: string; // Preferred start time
+  plannedDurationMinutes: string; // Total planned minutes
   remainingEstimateMinutes?: string;
   reminderOffsetMinutes: string;
   reminderCustomTime?: string;

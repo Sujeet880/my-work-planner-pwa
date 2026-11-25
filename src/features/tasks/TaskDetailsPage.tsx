@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
+  AlertTriangle,
   Archive,
   ArrowLeft,
   Calendar,
   CalendarOff,
+  CalendarRange,
+  CalendarX2,
   CheckCircle2,
   Clock,
   Folder,
+  History,
   Pause,
   Pencil,
   Play,
@@ -43,6 +47,7 @@ export function TaskDetailsPage() {
   const navigate = useNavigate();
   const {
     tasks,
+    calendarBlocks,
     projects,
     timeEntries,
     calendarConnection,
@@ -108,6 +113,28 @@ export function TaskDetailsPage() {
     task.plannedDurationMinutes,
     liveActualSeconds
   );
+
+  const isMultiDay = Boolean(
+    task.scheduledEndDate &&
+    task.scheduledDate &&
+    task.scheduledEndDate > task.scheduledDate
+  );
+
+  const taskBlocks = calendarBlocks.filter((b) => b.taskId === task.id);
+  const totalScheduledMinutes = taskBlocks.reduce((acc, b) => acc + b.durationMinutes, 0);
+  const completedMinutes = Math.floor(liveActualSeconds / 60);
+  const totalPlannedMinutes = task.plannedDurationMinutes || 0;
+  const remainingMinutes = Math.max(0, totalPlannedMinutes - completedMinutes);
+
+  const dailyHours = task.dailyPlannedMinutes
+    ? `${(task.dailyPlannedMinutes / 60).toFixed(1).replace(/\.0$/, '')}h`
+    : task.plannedDurationMinutes
+    ? `${(task.plannedDurationMinutes / 60).toFixed(1).replace(/\.0$/, '')}h`
+    : '—';
+  const totalPlannedHours = (totalPlannedMinutes / 60).toFixed(1).replace(/\.0$/, '') + 'h';
+  const scheduledHours = (totalScheduledMinutes / 60).toFixed(1).replace(/\.0$/, '') + 'h';
+  const completedHours = (completedMinutes / 60).toFixed(1).replace(/\.0$/, '') + 'h';
+  const remainingHours = (remainingMinutes / 60).toFixed(1).replace(/\.0$/, '') + 'h';
 
   const handleConfirmDelete = () => {
     deleteTask(task.id);
@@ -251,6 +278,119 @@ export function TaskDetailsPage() {
               )}
             </dl>
           </section>
+
+          {/* Multi-Day Progress Metrics Strip */}
+          {isMultiDay && (
+            <section className="rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#2F65F6]/10 text-[#2F65F6]">
+                  <CalendarRange className="h-4 w-4" />
+                </span>
+                <div>
+                  <h2 className="text-base font-bold text-[#1A1F2C]">Multi-Day Scheduling Progress</h2>
+                  <p className="text-xs text-[#7E8B9B]">Daily effort targets and planned timeline reconciliation</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                <div className="rounded-xl border border-[#E9ECF5] bg-[#F8FAFD] p-3 text-center">
+                  <div className="text-[11px] font-medium text-[#7E8B9B]">Start Date</div>
+                  <div className="mt-1 text-xs font-bold text-[#1A1F2C] truncate tabular-nums-strict">{task.scheduledDate}</div>
+                </div>
+
+                <div className="rounded-xl border border-[#E9ECF5] bg-[#F8FAFD] p-3 text-center">
+                  <div className="text-[11px] font-medium text-[#7E8B9B]">End Date</div>
+                  <div className="mt-1 text-xs font-bold text-[#1A1F2C] truncate tabular-nums-strict">{task.scheduledEndDate}</div>
+                </div>
+
+                <div className="rounded-xl border border-[#E9ECF5] bg-[#F8FAFD] p-3 text-center">
+                  <div className="text-[11px] font-medium text-[#7E8B9B]">Daily Planned</div>
+                  <div className="mt-1 text-xs font-bold text-[#2F65F6] tabular-nums-strict">{dailyHours}</div>
+                </div>
+
+                <div className="rounded-xl border border-[#E9ECF5] bg-[#F8FAFD] p-3 text-center">
+                  <div className="text-[11px] font-medium text-[#7E8B9B]">Total Planned</div>
+                  <div className="mt-1 text-xs font-bold text-[#1A1F2C] tabular-nums-strict">{totalPlannedHours}</div>
+                </div>
+
+                <div className="rounded-xl border border-[#E9ECF5] bg-[#F8FAFD] p-3 text-center">
+                  <div className="text-[11px] font-medium text-[#7E8B9B]">Scheduled</div>
+                  <div className="mt-1 text-xs font-bold text-[#1A1F2C] tabular-nums-strict">{scheduledHours}</div>
+                </div>
+
+                <div className="rounded-xl border border-[#E9ECF5] bg-[#F8FAFD] p-3 text-center">
+                  <div className="text-[11px] font-medium text-[#7E8B9B]">Completed</div>
+                  <div className="mt-1 text-xs font-bold text-emerald-600 tabular-nums-strict">{completedHours}</div>
+                </div>
+
+                <div className="rounded-xl border border-[#E9ECF5] bg-[#F8FAFD] p-3 text-center">
+                  <div className="text-[11px] font-medium text-[#7E8B9B]">Remaining</div>
+                  <div className="mt-1 text-xs font-bold text-amber-600 tabular-nums-strict">{remainingHours}</div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Allocated Calendar Blocks Card */}
+          {taskBlocks.length > 0 && (
+            <section className="rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-base font-bold text-[#1A1F2C]">Allocated Calendar Blocks</h2>
+                  <p className="mt-0.5 text-xs text-[#7E8B9B]">
+                    {taskBlocks.length} scheduled time block{taskBlocks.length === 1 ? '' : 's'} linked to this task
+                  </p>
+                </div>
+                <Link
+                  to="/calendar"
+                  className="text-xs font-semibold text-[#2F65F6] hover:underline"
+                >
+                  View in Calendar →
+                </Link>
+              </div>
+
+              <div className="divide-y divide-[#F0F3F9] rounded-xl border border-[#E9ECF5] bg-white overflow-hidden">
+                {taskBlocks.map((block) => (
+                  <div
+                    key={block.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3.5 hover:bg-[#F8FAFD] transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EDF2FE] text-[#2F65F6]">
+                        <Calendar className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-[#1A1F2C] tabular-nums-strict">
+                            {block.blockDate}
+                          </span>
+                          <span className="text-xs text-[#7E8B9B] tabular-nums-strict">
+                            {block.startTime} – {block.endTime}
+                          </span>
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[#7E8B9B]">
+                          <span>Duration: {block.durationMinutes} min ({(block.durationMinutes / 60).toFixed(1)}h)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-md bg-[#EDF2FE] px-2 py-0.5 text-[10px] font-semibold text-[#2F65F6]">
+                        {isMultiDay ? 'Multi-Day Block' : 'Task Block'}
+                      </span>
+                      <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold ${
+                        block.status === 'completed'
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-slate-100 text-slate-700'
+                      }`}>
+                        {block.status === 'completed' ? 'Completed' : 'Scheduled'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Work Sessions History Card */}
           <section className="rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_12px_32px_rgba(25,45,100,0.04)] backdrop-blur-xl">
@@ -488,19 +628,50 @@ export function TaskDetailsPage() {
       <Modal
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
-        title="Delete Task Permanently?"
-        description="Deleting this task removes the task and its linked work sessions from this view. Use Archive instead if you want to preserve historical time logs."
+        title="Delete Task?"
+        description=""
         footer={
-          <>
-            <Button variant="secondary" onClick={() => setConfirmDeleteOpen(false)}>
+          <div className="flex w-full items-center justify-end gap-2.5">
+            <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete}>
-              Delete Permanently
+            <Button variant="destructive" size="sm" onClick={handleConfirmDelete}>
+              Delete Task
             </Button>
-          </>
+          </div>
         }
-      />
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 rounded-xl border border-rose-100 bg-rose-50/50 p-3.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-600">
+              <AlertTriangle className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-bold text-[#1A1F2C] break-words">
+                {task.title}
+              </h4>
+              <p className="mt-1 text-xs text-[#7E8B9B]">
+                Are you sure you want to permanently delete this task?
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-[#E9ECF5] bg-[#F8FAFD] p-3.5 text-xs text-[#4A5568]">
+            <div className="flex items-start gap-2">
+              <CalendarX2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#2F65F6]" />
+              <span>
+                <strong>Calendar cleanup:</strong> All scheduled calendar time blocks allocated for this task will be removed.
+              </span>
+            </div>
+            <div className="flex items-start gap-2">
+              <History className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+              <span>
+                <strong>Work session safety:</strong> All previously completed work sessions and time entries remain preserved in your reports.
+              </span>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
